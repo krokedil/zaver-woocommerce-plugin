@@ -21,12 +21,7 @@ jobs:
     - name: Add server to known hosts
       run: |
         ssh-keyscan -H zaver-checkout-test.krokedil.site >> ~/.ssh/known_hosts
-        ssh-keyscan -H 134.209.85.121 >> ~/.ssh/known_hosts
 
     - name: Check home directory contents in InstaWP
       run: |
-        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~" || echo "Home directory contents not found"
-
-    - name: Check home directory contents in SpinupWP
-      run: |
-        ssh -v test@134.209.85.121 "ls -l ~" || echo "Home directory contents not found"
+        ssh beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~" || echo "Home directory contents not found"
