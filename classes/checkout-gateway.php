@@ -11,6 +11,7 @@ use KrokedilZCODeps\Zaver\SDK\Checkout;
 use KrokedilZCODeps\Zaver\SDK\Refund;
 use KrokedilZCODeps\Zaver\SDK\Object\PaymentStatusResponse;
 use KrokedilZCODeps\Zaver\SDK\Object\RefundResponse;
+use KrokedilZCODeps\Krokedil\Support\Logger;
 use WC_Order;
 use WC_Payment_Gateway;
 use Exception;
@@ -171,6 +172,8 @@ class Checkout_Gateway extends WC_Payment_Gateway {
 				'placeholder' => __( 'Default', 'zco' ),
 			),
 		);
+
+		$this->form_fields = Logger::add_settings_fields( $this->form_fields );
 	}
 
 	/**

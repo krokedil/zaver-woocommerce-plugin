@@ -22,7 +22,6 @@
 
 namespace Zaver;
 
-use KrokedilZCODeps\Krokedil\Support\Support;
 use KrokedilZCODeps\Krokedil\Support\Logger;
 use KrokedilZCODeps\Krokedil\Support\SystemReport;
 
@@ -43,11 +42,18 @@ class Plugin {
 	const PAYMENT_METHOD = 'zaver_checkout';
 
 	/**
-	 * Logger instance.
+	 * The logger instance.
 	 *
-	 * @var Support
+	 * @var Logger
 	 */
-	private $support = null;
+	private $logger;
+
+	/**
+	 * The system report instance.
+	 *
+	 * @var SystemReport
+	 */
+	private $system_report;
 
 	/**
 	 * Get the instance of the plugin.
@@ -70,7 +76,7 @@ class Plugin {
 	 * @return Logger
 	 */
 	public function logger() {
-		return $this->support->logger();
+		return $this->logger;
 	}
 
 	/**
@@ -79,7 +85,7 @@ class Plugin {
 	 * @return SystemReport
 	 */
 	public function report() {
-		return $this->support->system_report();
+		return $this->system_report;
 	}
 
 	/**
@@ -127,7 +133,9 @@ class Plugin {
 
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 
-		$this->support = new Support( 'zaver_checkout', 'Zaver Checkout' );
+		$allow_logging       = wc_string_to_bool( self::gateway()->get_option( 'logging' ) );
+		$this->logger        = new Logger( 'zaver_checkout', $allow_logging );
+		$this->system_report = new SystemReport( 'zaver_checkout', 'Zaver Checkout' );
 		Hooks::instance();
 	}
 
