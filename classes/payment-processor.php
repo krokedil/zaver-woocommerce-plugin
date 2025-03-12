@@ -104,6 +104,16 @@ class Payment_Processor {
 		do_action( 'zco_process_payment_handle_response', $order, $payment_status, $redirect );
 
 		switch ( $payment_status->getPaymentStatus() ) {
+			case PaymentStatus::PENDING_CONFIRMATION:
+				$order->update_status( 'on-hold', __( 'Zaver Payment is pending confirmation', 'zco' ) );
+				ZCO()->logger()->info(
+					'Zaver Payment is pending confirmation',
+					array(
+						'orderId'   => $order->get_id(),
+						'paymentId' => $payment_status->getPaymentId(),
+					)
+				);
+				break;
 			case PaymentStatus::SETTLED:
 				// translators: %s is the payment ID.
 				$order->add_order_note( sprintf( __( 'Successful payment with Zaver - payment ID: %s', 'zco' ), $payment_status->getPaymentId() ) );
