@@ -20,32 +20,32 @@ jobs:
 
     - name: Add server to known hosts
       run: |
-        ssh-keyscan -H 134.209.85.121 >> ~/.ssh/known_hosts
+        ssh-keyscan -H zaver-checkout-test.krokedil.site >> ~/.ssh/known_hosts
 
     - name: Check SSH connectivity
       run: |
-        ssh test@134.209.85.121 "echo 'SSH connection successful'"
+        ssh beviranudi5807@zaver-checkout-test.krokedil.site "echo 'SSH connection successful'"
 
     - name: Create test file on server
       run: |
-        ssh test@134.209.85.121 "echo 'This is a test file' > ~/test.txt"
+        ssh beviranudi5807@zaver-checkout-test.krokedil.site "echo 'This is a test file' > ~/test.txt"
 
     - name: Verify test file creation
       run: |
-        ssh test@134.209.85.121 "ls -l ~/test.txt" || echo "File not found"
+        ssh beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~/test.txt" || echo "File not found"
 
     - name: Check home directory contents
       run: |
-        ssh test@134.209.85.121 "ls -l ~" || echo "Home directory contents not found"
+        ssh beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~" || echo "Home directory contents not found"
 
     - name: Check current directory
       run: |
-        ssh test@134.209.85.121 "pwd" || echo "Current directory not found"
+        ssh beviranudi5807@zaver-checkout-test.krokedil.site "pwd" || echo "Current directory not found"
 
     - name: Check file creation in /tmp
       run: |
-        ssh test@134.209.85.121 "echo 'This is a test file' > /tmp/test.txt && ls -l /tmp/test.txt" || echo "File in /tmp not found"
+        ssh beviranudi5807@zaver-checkout-test.krokedil.site "echo 'This is a test file' > /tmp/test.txt && ls -l /tmp/test.txt" || echo "File in /tmp not found"
 
     - name: Capture SSH output
       run: |
-        ssh test@134.209.85.121"cat ~/test.txt" || echo "File content not found"
+        ssh beviranudi5807@zaver-checkout-test.krokedil.site "cat ~/test.txt" || echo "File content not found"
