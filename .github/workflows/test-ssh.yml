@@ -24,4 +24,4 @@ jobs:
 
     - name: Check home directory contents in InstaWP
       run: |
-        ssh beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~" || echo "Home directory contents not found"
+        ssh -t beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~" || echo "Home directory contents not found"
