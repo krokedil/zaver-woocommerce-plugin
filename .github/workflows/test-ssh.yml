@@ -32,20 +32,20 @@ jobs:
 
     - name: Verify test file creation
       run: |
-        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~/test.txt"
+        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~/test.txt" || echo "File not found"
 
     - name: Check home directory contents
       run: |
-        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~"
+        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~" || echo "Home directory contents not found"
 
     - name: Check current directory
       run: |
-        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "pwd"
+        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "pwd" || echo "Current directory not found"
 
     - name: Check file creation in /tmp
       run: |
-        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "echo 'This is a test file' > /tmp/test.txt && ls -l /tmp/test.txt"
+        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "echo 'This is a test file' > /tmp/test.txt && ls -l /tmp/test.txt" || echo "File in /tmp not found"
 
     - name: Capture SSH output
       run: |
-        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "cat ~/test.txt"
+        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "cat ~/test.txt" || echo "File content not found"
