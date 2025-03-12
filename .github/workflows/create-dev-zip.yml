@@ -99,7 +99,7 @@ jobs:
     - name: Deploy
       if: github.event.inputs.INSTAWP_SITE_ID != ''
       run: |
-        ssh ${{ github.event.inputs.INSTAWP_SITE_ID }} "cd /web/zaver-checkout-test.krokedil.site/public_html && wp plugin install https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/${{ env.ZIP_FILE_NAME }} --activate --force --skip-plugins --skip-themes"
+        ssh ${{ github.event.inputs.INSTAWP_SITE_ID }} "cd ~/web/zaver-checkout-test.krokedil.site/public_html && wp plugin install https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/${{ env.ZIP_FILE_NAME }} --activate --force --skip-plugins --skip-themes"
 
     - name: Delete uploaded zip from S3
       if: github.event.inputs.INSTAWP_SITE_ID != ''
