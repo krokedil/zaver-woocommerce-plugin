@@ -83,7 +83,7 @@ jobs:
         -H "Authorization: Bearer ${{ secrets.INSTAWP_API_TOKEN }}" \
         -H "Accept: application/json" \
         -H "Content-Type: application/json" \
-        -d '{"plugin_urls": "https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/${{ env.ZIP_FILE_NAME }}"}'
+        -d '{"plugin_slugs": "wordpress-seo,contact-form-7"}'
 
     - name: Setup SSH
       if: github.event.inputs.INSTAWP_SITE_ID != ''

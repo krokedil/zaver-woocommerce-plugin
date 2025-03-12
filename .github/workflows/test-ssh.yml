@@ -49,3 +49,11 @@ jobs:
     - name: Capture SSH output
       run: |
         ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "cat ~/test.txt" || echo "File content not found"
+
+    - name: Install plugin on InstaWP site
+      run: |
+        curl -X PUT "https://app.instawp.io/api/v2/sites/1466322/install-content" \
+        -H "Authorization: Bearer ${{ secrets.INSTAWP_API_TOKEN }}" \
+        -H "Accept: application/json" \
+        -H "Content-Type: application/json" \
+        -d '{"plugin_slugs": "wordpress-seo,contact-form-7"}'
