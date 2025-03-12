@@ -24,28 +24,28 @@ jobs:
 
     - name: Check SSH connectivity
       run: |
-        ssh -v test@134.209.85.121 "echo 'SSH connection successful'"
+        ssh test@134.209.85.121 "echo 'SSH connection successful'"
 
     - name: Create test file on server
       run: |
-        ssh -v test@134.209.85.121 "echo 'This is a test file' > ~/test.txt"
+        ssh test@134.209.85.121 "echo 'This is a test file' > ~/test.txt"
 
     - name: Verify test file creation
       run: |
-        ssh -v test@134.209.85.121 "ls -l ~/test.txt" || echo "File not found"
+        ssh test@134.209.85.121 "ls -l ~/test.txt" || echo "File not found"
 
     - name: Check home directory contents
       run: |
-        ssh -v test@134.209.85.121 "ls -l ~" || echo "Home directory contents not found"
+        ssh test@134.209.85.121 "ls -l ~" || echo "Home directory contents not found"
 
     - name: Check current directory
       run: |
-        ssh -v test@134.209.85.121 "pwd" || echo "Current directory not found"
+        ssh test@134.209.85.121 "pwd" || echo "Current directory not found"
 
     - name: Check file creation in /tmp
       run: |
-        ssh -v test@134.209.85.121 "echo 'This is a test file' > /tmp/test.txt && ls -l /tmp/test.txt" || echo "File in /tmp not found"
+        ssh test@134.209.85.121 "echo 'This is a test file' > /tmp/test.txt && ls -l /tmp/test.txt" || echo "File in /tmp not found"
 
     - name: Capture SSH output
       run: |
-        ssh -v test@134.209.85.121"cat ~/test.txt" || echo "File content not found"
+        ssh test@134.209.85.121"cat ~/test.txt" || echo "File content not found"
