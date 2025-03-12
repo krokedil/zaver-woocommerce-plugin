@@ -100,11 +100,11 @@ jobs:
       if: github.event.inputs.INSTAWP_SITE_ID != ''
       run: |
         echo "Starting deployment to InstaWP site ID ${{ github.event.inputs.INSTAWP_SITE_ID }}"
-                echo "Starting deployment to InstaWP site ID ${{ github.event.inputs.INSTAWP_SITE_ID }}"
-        ssh -v ${{ github.event.inputs.INSTAWP_SITE_ID }} "cd ~/web/zaver-checkout-test.krokedil.site/public_html && wp plugin install https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/${{ env.ZIP_FILE_NAME }} --activate --force --skip-pluginsthemes" 2> 1 | tee ssh_ot.put.lot.  lo  g
+        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "cd ~/web/zaver-checkout-test.krokedil.site/public_html && wp plugin install https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/${{ env.ZIP_FILE_NAME }} --activate --force --skip-plugins --skip-themes" 2>&1 | tee ssh_output.log
         EXIT_CODE=$?
         if [ $EXIT_CODE -ne 0 ]; then
           echo "Deployment failed with exit code $EXIT_CODE"
+          cat ssh_output.log
           exit $EXIT_CODE
         else
           echo "Deployment succeeded"
@@ -118,7 +118,7 @@ jobs:
         path: ssh_output.log
 
 #    - name: Delete uploaded zip from S3
-#      if: github.event.inputs.INST#AWP_#SITE_ID != ''
+#      if: github.event.inputs.INSTAWP_SITE_ID != ''
 #      run: |
 #        aws s3 rm s3://krokedil-plugin-dev-zip/${{ env.ZIP_FILE_NAME }}
 
