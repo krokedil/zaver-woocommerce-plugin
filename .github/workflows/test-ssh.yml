@@ -45,3 +45,7 @@ jobs:
     - name: Check file creation in /tmp
       run: |
         ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "echo 'This is a test file' > /tmp/test.txt && ls -l /tmp/test.txt"
+
+    - name: Capture SSH output
+      run: |
+        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "cat ~/test.txt"
