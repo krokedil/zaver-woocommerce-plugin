@@ -2,6 +2,14 @@ name: Create Dev Zip
 
 on:
   workflow_dispatch:
+    inputs:
+      INSTAWP_SITE_ID:
+        description: 'InstaWP Site ID (1466322 is zaver-checkout-test.krokedil.site)'
+        required: false
+        default: '1466322'
+  push:
+    branches:
+      - develop-payment-methods
 
 jobs:
   build:
@@ -10,6 +18,8 @@ jobs:
     env:
       PLUGIN_SLUG: zaver-checkout-for-woocommerce
       PLUGIN_MAIN_FILE: woocommerce-zaver-checkout.php
+      # Set INSTAWP_SITE_ID based on the event type and branch
+      INSTAWP_SITE_ID: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop-payment-methods' && '1466322' || github.event.inputs.INSTAWP_SITE_ID }}
 
     steps:
     - name: Checkout repository
@@ -27,10 +37,12 @@ jobs:
         key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
         restore-keys: |
           ${{ runner.os }}-composer-
+
     - name: Install dependencies and build project
       run: |
         mkdir -p ~/.composer/cache
         composer install --prefer-dist --no-progress
+
     - name: Get branch name and commit hash
       id: vars
       run: |
@@ -40,6 +52,7 @@ jobs:
         echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
         echo "COMMIT_HASH=${COMMIT_HASH}" >> $GITHUB_ENV
         echo "ZIP_FILE_NAME=${ZIP_FILE_NAME}" >> $GITHUB_ENV
+
     - name: Modify version, prepare zip directory, and create zip file
       run: |
         sed -i "s/^ \* Version: \(.*\)/ \* Version: \1-dev.${BRANCH_NAME}.${COMMIT_HASH}/" ${{ env.PLUGIN_MAIN_FILE }}
@@ -47,6 +60,7 @@ jobs:
         rsync -av --exclude-from='.distignore' --exclude='dev-zip-temp' . dev-zip-temp/${{ env.PLUGIN_SLUG }}
         cd dev-zip-temp
         zip -r ../${{ env.ZIP_FILE_NAME }} ${{ env.PLUGIN_SLUG }}
+        
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -57,5 +71,25 @@ jobs:
     - name: Upload to S3
       run: |
         aws s3 cp ${{ env.ZIP_FILE_NAME }} s3://krokedil-plugin-dev-zip/${{ env.ZIP_FILE_NAME }}
+
     - name: Add annotation to workflow run with dev zip url
+      if: env.INSTAWP_SITE_ID == ''
       run: echo "::notice::Dev Zip Url available for 30 days, https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/${{ env.ZIP_FILE_NAME }}"
+
+    - name: Install plugin on InstaWP site
+      if: env.INSTAWP_SITE_ID != ''
+      run: |
+        curl -X POST "https://app.instawp.io/api/v2/sites/${{ env.INSTAWP_SITE_ID }}/execute-command" \
+        -H "Authorization: Bearer ${{ secrets.INSTAWP_API_TOKEN }}" \
+        -H "Accept: application/json" \
+        -H "Content-Type: application/json" \
+        -d '{"command_id":2114,"commandArguments":[{"dev_zip_public_url":"https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/${{ env.ZIP_FILE_NAME }}"}]}'
+
+    - name: Delete uploaded zip from S3
+      if: env.INSTAWP_SITE_ID != ''
+      run: |
+        aws s3 rm s3://krokedil-plugin-dev-zip/${{ env.ZIP_FILE_NAME }}
+
+    - name: Add annotation for InstaWP installation
+      if: env.INSTAWP_SITE_ID != ''
+      run: echo "::notice::The dev zip plugin has been pushed to the InstaWP site ID ${{ github.event.inputs.INSTAWP_SITE_ID }}"
