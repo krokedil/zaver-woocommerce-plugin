@@ -79,7 +79,7 @@ jobs:
     - name: Install plugin on InstaWP site
       if: github.event.inputs.INSTAWP_SITE_ID != ''
       run: |
-        curl -X PUT "https://app.instawp.io/api/v2/sites/${{ github.event.inputs.INSTAWP_SITE_ID }}/install-content" \
+        curl -X PUT "https://app.instawp.io/api/v2/sites/1466322/install-content" \
         -H "Authorization: Bearer ${{ secrets.INSTAWP_API_TOKEN }}" \
         -H "Accept: application/json" \
         -H "Content-Type: application/json" \
