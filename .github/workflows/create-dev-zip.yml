@@ -85,6 +85,17 @@ jobs:
         -H "Content-Type: application/json" \
         -d '{"plugin_urls": "https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/${{ env.ZIP_FILE_NAME }}"}'
 
+    - name: Setup SSH
+      if: env.INSTAWP_SITE_ID != ''
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.INSTAWP_DEPLOY_SSH_PRIVATE_KEY }}
+
+    - name: Deploy
+      if: env.INSTAWP_SITE_ID != ''
+      run: |
+        ssh ${{ env.INSTAWP_SITE_ID }} "cd /web/zaver-checkout-test.krokedil.site/public_html && wp plugin install https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/${{ env.ZIP_FILE_NAME }} --activate --force --skip-plugins --skip-themes"
+
     - name: Delete uploaded zip from S3
       if: env.INSTAWP_SITE_ID != ''
       run: |
