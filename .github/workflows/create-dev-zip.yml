@@ -87,7 +87,7 @@ jobs:
 
     - name: Setup SSH
       if: github.event.inputs.INSTAWP_SITE_ID != ''
-      uses: webfactory/ssh-agent@v0.8.0
+      uses: webfactory/ssh-agent@v0.9.0
       with:
         ssh-private-key: ${{ secrets.INSTAWP_DEPLOY_SSH_PRIVATE_KEY }}
 
@@ -101,10 +101,10 @@ jobs:
       run: |
         ssh -v ${{ github.event.inputs.INSTAWP_SITE_ID }} "cd ~/web/zaver-checkout-test.krokedil.site/public_html && wp plugin install https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/${{ env.ZIP_FILE_NAME }} --activate --force --skip-plugins --skip-themes" 2>&1 | tee ssh_output.log
 
-    - name: Delete uploaded zip from S3
-      if: github.event.inputs.INSTAWP_SITE_ID != ''
-      run: |
-        aws s3 rm s3://krokedil-plugin-dev-zip/${{ env.ZIP_FILE_NAME }}
+#    - name: Delete uploaded zip from S3
+#      if: github.event.inputs.INSTAWP_SITE_ID != ''
+#      run: |
+#        aws s3 rm s3://krokedil-plugin-dev-zip/${{ env.ZIP_FILE_NAME }}
 
     - name: Add annotation for InstaWP installation
       if: github.event.inputs.INSTAWP_SITE_ID != ''
