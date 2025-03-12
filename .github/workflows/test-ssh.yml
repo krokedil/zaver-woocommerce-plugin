@@ -37,3 +37,11 @@ jobs:
     - name: Check home directory contents
       run: |
         ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~"
+
+    - name: Check current directory
+      run: |
+        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "pwd"
+
+    - name: Check file creation in /tmp
+      run: |
+        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "echo 'This is a test file' > /tmp/test.txt && ls -l /tmp/test.txt"
