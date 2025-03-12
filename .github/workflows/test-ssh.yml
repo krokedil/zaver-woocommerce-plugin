@@ -29,3 +29,11 @@ jobs:
     - name: Create test file on server
       run: |
         ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "echo 'This is a test file' > ~/test.txt"
+
+    - name: Verify test file creation
+      run: |
+        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~/test.txt"
+
+    - name: Check home directory contents
+      run: |
+        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~"
