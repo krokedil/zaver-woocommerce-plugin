@@ -112,7 +112,7 @@ jobs:
 
     - name: Upload SSH output log
       if: github.event.inputs.INSTAWP_SITE_ID != ''
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ssh-output-log
         path: ssh_output.log
