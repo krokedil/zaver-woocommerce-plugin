@@ -22,6 +22,8 @@ jobs:
       run: |
         ssh-keyscan -H zaver-checkout-test.krokedil.site >> ~/.ssh/known_hosts
 
-    - name: Check home directory contents in InstaWP
+    - name: Create and execute shell script on server
       run: |
-        ssh -t beviranudi5807@zaver-checkout-test.krokedil.site "ls -l ~" || echo "Home directory contents not found"
+        ssh beviranudi5807@zaver-checkout-test.krokedil.site "echo 'ls -l ~' > ~/check_home_dir.sh"
+        ssh beviranudi5807@zaver-checkout-test.krokedil.site "chmod +x ~/check_home_dir.sh"
+        ssh beviranudi5807@zaver-checkout-test.krokedil.site "~/check_home_dir.sh" || echo "Home directory contents not found"
