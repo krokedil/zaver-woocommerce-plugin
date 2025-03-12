@@ -1,0 +1,27 @@
+name: Test SSH
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  test-ssh:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.INSTAWP_DEPLOY_SSH_PRIVATE_KEY }}
+
+    - name: Add server to known hosts
+      run: |
+        ssh-keyscan -H zaver-checkout-test.krokedil.site >> ~/.ssh/known_hosts
+
+    - name: Create test file on server
+      run: |
+        ssh beviranudi5807@zaver-checkout-test.krokedil.site "echo 'This is a test file' > ~/test.txt"
