@@ -22,6 +22,10 @@ jobs:
       run: |
         ssh-keyscan -H zaver-checkout-test.krokedil.site >> ~/.ssh/known_hosts
 
+    - name: Check SSH connectivity
+      run: |
+        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "echo 'SSH connection successful'"
+
     - name: Create test file on server
       run: |
-        ssh beviranudi5807@zaver-checkout-test.krokedil.site "echo 'This is a test file' > ~/test.txt"
+        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "echo 'This is a test file' > ~/test.txt"
