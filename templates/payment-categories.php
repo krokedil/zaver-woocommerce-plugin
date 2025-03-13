@@ -65,7 +65,7 @@ foreach ( $payment_methods as $payment_method ) {
 	if ( false !== strpos( $chosen_gateway->id, Plugin::PAYMENT_METHOD ) || $gateway->chosen ) {
 		$gateway->chosen = false;
 		// ... set the first payment method received from Zaver as chosen.
-		if ( $payment_method === $payment_methods[ array_key_first( $payment_methods ) ]->getPaymentMethod() ) {
+		if ( $payment_method['paymentMethod'] === $payment_methods[ array_key_first( $payment_methods ) ]['paymentMethod'] ) {
 			$gateway->chosen = true;
 		}
 	}
