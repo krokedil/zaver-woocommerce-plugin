@@ -24,4 +24,4 @@ jobs:
 
     - name: SSH into server and install plugin from Amazon S3 bucket
       run: |
-        ssh beviranudi5807@zaver-checkout-test.krokedil.site "cd ~/web/zaver-checkout-test.krokedil.site/public_html && wp plugin install https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/avarda-checkout-for-woocommerce-dev-develop-fix-shipping-widget-error-48eae3c.zip --activate --force --skip-plugins --skip-themes"
+        ssh -o StrictHostKeyChecking=no beviranudi5807@zaver-checkout-test.krokedil.site "cd ~/web/zaver-checkout-test.krokedil.site/public_html && wp plugin install https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/avarda-checkout-for-woocommerce-dev-develop-fix-shipping-widget-error-48eae3c.zip --activate --force --skip-plugins --skip-themes"
