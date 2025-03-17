@@ -1,4 +1,4 @@
-name: Test SSH
+name: Test installing plugin on InstaWP staging site
 
 on:
   push:
@@ -13,9 +13,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install sshpass
-      run: sudo apt-get update && sudo apt-get install -y sshpass
-
     - name: Setup SSH
       uses: webfactory/ssh-agent@v0.9.0
       with:
@@ -25,6 +22,6 @@ jobs:
       run: |
         ssh-keyscan -H zaver-checkout-test.krokedil.site >> ~/.ssh/known_hosts
 
-    - name: Create and execute shell script on server
+    - name: SSH into server and install plugin from Amazon S3 bucket
       run: |
-        sshpass -p "${{ secrets.INSTAWP_ZAVER_CHECKOUT_TEST_SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no beviranudi5807@zaver-checkout-test.krokedil.site "pwd"
+        ssh beviranudi5807@zaver-checkout-test.krokedil.site "cd ~/web/zaver-checkout-test.krokedil.site/public_html && wp plugin install https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/zaver-checkout-for-woocommerce-dev-develop-payment-methods-237affb.zip --activate --force --skip-plugins --skip-themes"
