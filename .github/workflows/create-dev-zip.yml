@@ -79,48 +79,16 @@ jobs:
     - name: Install plugin on InstaWP site
       if: github.event.inputs.INSTAWP_SITE_ID != ''
       run: |
-        curl -X PUT "https://app.instawp.io/api/v2/sites/1466322/install-content" \
+        curl -X POST "https://app.instawp.io/api/v2/sites/${{ env.INSTAWP_SITE_ID }}/execute-command" \
         -H "Authorization: Bearer ${{ secrets.INSTAWP_API_TOKEN }}" \
         -H "Accept: application/json" \
         -H "Content-Type: application/json" \
-        -d '{"plugin_slugs": "wordpress-seo,contact-form-7"}'
+        -d '{"command_id":2114,"commandArguments":[{"dev_zip_public_url":"https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/${{ env.ZIP_FILE_NAME }}"}]}'
 
-    - name: Setup SSH
-      if: github.event.inputs.INSTAWP_SITE_ID != ''
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.INSTAWP_DEPLOY_SSH_PRIVATE_KEY }}
-
-    - name: Add server to known hosts
+    - name: Delete uploaded zip from S3
       if: github.event.inputs.INSTAWP_SITE_ID != ''
       run: |
-        ssh-keyscan -H zaver-checkout-test.krokedil.site >> ~/.ssh/known_hosts
-
-    - name: Deploy
-      if: github.event.inputs.INSTAWP_SITE_ID != ''
-      run: |
-        echo "Starting deployment to InstaWP site ID ${{ github.event.inputs.INSTAWP_SITE_ID }}"
-        ssh -v beviranudi5807@zaver-checkout-test.krokedil.site "cd ~/web/zaver-checkout-test.krokedil.site/public_html && wp plugin install https://krokedil-plugin-dev-zip.s3.eu-north-1.amazonaws.com/${{ env.ZIP_FILE_NAME }} --activate --force --skip-plugins --skip-themes" 2>&1 | tee ssh_output.log
-        EXIT_CODE=$?
-        if [ $EXIT_CODE -ne 0 ]; then
-          echo "Deployment failed with exit code $EXIT_CODE"
-          cat ssh_output.log
-          exit $EXIT_CODE
-        else
-          echo "Deployment succeeded"
-        fi
-
-    - name: Upload SSH output log
-      if: github.event.inputs.INSTAWP_SITE_ID != ''
-      uses: actions/upload-artifact@v4
-      with:
-        name: ssh-output-log
-        path: ssh_output.log
-
-#    - name: Delete uploaded zip from S3
-#      if: github.event.inputs.INSTAWP_SITE_ID != ''
-#      run: |
-#        aws s3 rm s3://krokedil-plugin-dev-zip/${{ env.ZIP_FILE_NAME }}
+        aws s3 rm s3://krokedil-plugin-dev-zip/${{ env.ZIP_FILE_NAME }}
 
     - name: Add annotation for InstaWP installation
       if: github.event.inputs.INSTAWP_SITE_ID != ''
