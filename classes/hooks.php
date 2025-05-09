@@ -7,10 +7,8 @@
 
 namespace Zaver;
 
-use KrokedilZCODeps\Zaver\SDK\Object\PaymentUpdateRequest;
-use KrokedilZCODeps\Zaver\SDK\Config\PaymentStatus;
 use Exception;
-use WC_Order;
+use KrokedilZCODeps\Zaver\SDK\Utils\Error;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -45,9 +43,7 @@ final class Hooks {
 	private function __construct() {
 		add_action( 'woocommerce_api_zaver_payment_callback', array( $this, 'handle_payment_callback' ) );
 		add_action( 'woocommerce_api_zaver_refund_callback', array( $this, 'handle_refund_callback' ) );
-		add_action( 'woocommerce_order_status_cancelled', array( $this, 'cancelled_order' ), 10, 2 );
 		add_action( 'template_redirect', array( $this, 'check_order_received' ) );
-		add_action( 'zco_before_checkout', array( $this, 'add_cancel_link' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_checkout_styles' ) );
 	}
 
@@ -78,7 +74,7 @@ final class Hooks {
 			$payment_status = Plugin::gateway()->receive_payment_callback();
 			$meta           = $payment_status->getPaymentMetadata();
 
-			ZCO()->logger()->debug( 'Received Zaver payment callback', (array) $payment_status );
+			ZCO()->logger()->debug( '[CALLBACK]: Received Zaver payment callback', (array) $payment_status );
 
 			if ( ! isset( $meta['orderId'] ) ) {
 				throw new Exception( 'Missing order ID' );
@@ -91,14 +87,13 @@ final class Hooks {
 			}
 
 			Payment_Processor::handle_response( $order, $payment_status, false );
-		} catch ( Exception $e ) {
+		} catch ( Exception | Error $e ) {
 			if ( $order ) {
 				// translators: %s is the error message.
 				$order->update_status( 'failed', sprintf( __( 'Failed with Zaver payment: %s', 'zco' ), $e->getMessage() ) );
-				ZCO()->logger()->error( sprintf( 'Failed with Zaver payment: %s', $e->getMessage() ), array( 'orderId' => $order->get_id() ) );
-			} else {
-				ZCO()->logger()->error( sprintf( 'Failed with Zaver payment: %s', $e->getMessage() ) );
 			}
+
+			ZCO()->logger()->error( sprintf( '[CALLBACK]: Failed with Zaver payment: %s', $e->getMessage() ), Helper::add_request_log_context( $e, array( 'orderId' => $order ? $order->get_id() : null ) ) );
 
 			status_header( 400 );
 		}
@@ -126,10 +121,10 @@ final class Hooks {
 			}
 
 			Payment_Processor::handle_response( $order );
-		} catch ( Exception $e ) {
+		} catch ( Exception | Error $e ) {
 			// translators: %s is the error message.
 			$order->update_status( 'failed', sprintf( __( 'Failed with Zaver payment: %s', 'zco' ), $e->getMessage() ) );
-			ZCO()->logger()->error( sprintf( 'Failed with Zaver payment: %s', $e->getMessage() ), array( 'orderId' => $order->get_id() ) );
+			ZCO()->logger()->error( sprintf( '[ORDER PAY]: Failed with Zaver payment: %s', $e->getMessage() ), Helper::add_request_log_context( $e, array( 'orderId' => $order->get_id() ) ) );
 
 			wc_add_notice( __( 'An error occurred with your Zaver payment - please try again, or contact the site support.', 'zco' ), 'error' );
 
@@ -149,7 +144,7 @@ final class Hooks {
 			$refund = Plugin::gateway()->receive_refund_callback();
 			$meta   = $refund->getMerchantMetadata();
 
-			ZCO()->logger()->debug( 'Received Zaver refund callback', (array) $refund );
+			ZCO()->logger()->debug( '[CALLBACK]: Received Zaver refund callback', (array) $refund );
 
 			if ( ! isset( $meta['orderId'] ) ) {
 				throw new Exception( 'Missing order ID' );
@@ -162,72 +157,12 @@ final class Hooks {
 			}
 
 			Refund_Processor::handle_response( $order, $refund );
-		} catch ( Exception $e ) {
+		} catch ( Exception | Error $e ) {
 			// translators: %s is the error message.
 			$order->update_status( 'failed', sprintf( __( 'Failed with Zaver payment: %s', 'zco' ), $e->getMessage() ) );
-			ZCO()->logger()->error( sprintf( 'Failed with Zaver payment: %s', $e->getMessage() ), array( 'orderId' => $order->get_id() ) );
+			ZCO()->logger()->error( sprintf( '[CALLBACK]: Failed with Zaver payment: %s', $e->getMessage() ), Helper::add_request_log_context( $e, array( 'orderId' => $order->get_id() ) ) );
 
 			status_header( 400 );
 		}
-	}
-
-	/**
-	 * Cancel the Zaver payment when the order is cancelled.
-	 *
-	 * @throws Exception If the payment ID is missing.
-	 *
-	 * @param int      $order_id The WooCommerce order ID.
-	 * @param WC_Order $order The WooCommerce order.
-	 *
-	 * @return void
-	 */
-	public function cancelled_order( $order_id, $order ) {
-		$payment = $order->get_meta( '_zaver_payment' );
-		if ( ! isset( $payment['id'] ) ) {
-			return;
-		}
-
-		try {
-			$response = Plugin::gateway()->api()->cancelPayment( $payment['id'] );
-			$order->add_order_note( __( 'Cancelled Zaver payment', 'zco' ) );
-
-			ZCO()->logger()->info(
-				'Cancelled Zaver payment',
-				array(
-					'payload'   => $payment['id'],
-					'response'  => $response,
-					'orderId'   => $order->get_id(),
-					'paymentId' => $payment['id'],
-				)
-			);
-		} catch ( Exception $e ) {
-			// translators: %s is the error message.
-			$order->add_order_note( sprintf( __( 'Failed to cancel Zaver payment: %s', 'zco' ), $e->getMessage() ) );
-			ZCO()->logger()->error(
-				sprintf(
-					'Failed to cancel Zaver payment: %s',
-					$e->getMessage()
-				),
-				array(
-					'payload'   => $update ?? null,
-					'orderId'   => $order->get_id(),
-					'paymentId' => $payment['id'],
-				)
-			);
-		}
-	}
-
-	/**
-	 * Prints a cancel link to the checkout page.
-	 *
-	 * @param WC_Order $order The WooCommerce order.
-	 *
-	 * @return void
-	 */
-	public function add_cancel_link( $order ) {
-		$url  = $order->get_cancel_order_url( wc_get_checkout_url() );
-		$text = __( 'Change payment method', 'zco' );
-
-		printf( '<p class="zco-cancel-order"><a href="%s">&larr; %s</a></p>', esc_url( $url ), esc_textarea( $text ) );
 	}
 }
