@@ -1,0 +1,32 @@
+{
+  "require": {
+    "php": ">=7.4",
+    "krokedil/support": "dev-develop",
+    "krokedil/woocommerce": "^1.0.0",
+    "zaver/sdk": "dev-main"
+  },
+  "require-dev": {
+    "symfony/deprecation-contracts": "^2.2"
+  },
+  "config": {
+    "platform": {
+      "php": "7.4"
+    }
+  },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "git@github.com:krokedil/support.git"
+    },
+    {
+      "type": "vcs",
+      "url": "git@github.com:krokedil/woocommerce.git"
+    },
+    {
+      "type": "vcs",
+      "url": "git@github.com:krokedil/zaver-php-sdk.git"
+    }
+  ],
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}

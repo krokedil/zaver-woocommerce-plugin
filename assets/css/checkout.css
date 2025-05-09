@@ -1,0 +1,19 @@
+.wc_payment_methods .payment_method_zaver_checkout li label input[type="radio"] {
+    vertical-align: middle;
+}
+
+.wc_payment_methods .payment_method_zaver_checkout li label {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+}
+
+.zaver-checkout-title {
+    vertical-align: middle;
+    display: inline-block;
+}
+
+/* Hide the icon when the title is displayed. */
+.zaver-checkout-title ~ .zaver-checkout-icon {
+    display: none;
+}

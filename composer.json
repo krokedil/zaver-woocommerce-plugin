@@ -5,9 +5,29 @@
         "platform": {
             "php": "7.4.0"
         },
-        "vendor-dir": "trunk/vendor"
+        "allow-plugins": {
+            "wpify/scoper": true
+        }
     },
-    "require": {
-        "zaver/sdk": "^1.0.0"
-    }
+    "require": {},
+    "require-dev": {
+        "wpify/scoper": "3.1.3"
+    },
+    "extra": {
+        "wpify-scoper": {
+            "prefix": "KrokedilZCODeps",
+            "folder": "dependencies",
+            "autorun": true,
+            "globals": [
+                "wordpress",
+                "woocommerce"
+            ]
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Krokedil\\Zaver\\": "src/"
+        }
+    },
+    "minimum-stability": "dev"
 }
