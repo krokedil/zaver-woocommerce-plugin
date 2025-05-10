@@ -7,8 +7,6 @@
 
 namespace Zaver;
 
-use KrokedilZCODeps\Zaver\SDK\Object\PaymentUpdateRequest;
-use KrokedilZCODeps\Zaver\SDK\Config\PaymentStatus;
 use Exception;
 use WC_Order;
 

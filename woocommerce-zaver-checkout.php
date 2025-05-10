@@ -227,6 +227,7 @@ class Plugin {
 		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'add_settings_link' ) );
 
 		add_action( 'init', array( $this, 'load_textdomain' ) );
+		add_action( 'before_woocommerce_init', array( $this, 'declare_wc_compatibility' ) );
 
 		$this->logger        = new Logger( 'zaver_checkout', 'Zaver Checkout' );
 		$this->system_report = new SystemReport( 'zaver_checkout', 'Zaver Checkout', array() );
@@ -242,6 +243,19 @@ class Plugin {
 	public function load_textdomain() {
 		load_plugin_textdomain( 'zco', false, plugin_basename( __DIR__ ) . '/languages' );
 	}
+
+		/**
+		 * Declare compatibility with WooCommerce features.
+		 *
+		 * @return void
+		 */
+	public function declare_wc_compatibility() {
+		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+			// Declare HPOS compatibility.
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+		}
+	}
+
 
 	/**
 	 * Initialize composers autoloader.
