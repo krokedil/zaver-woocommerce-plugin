@@ -84,4 +84,31 @@ class Helper {
 
 		return strncmp( $url, 'https:', 6 ) === 0;
 	}
+
+	/**
+	 * Get the order by payment ID.
+	 *
+	 * @param string $payment_id The payment ID to search for.
+	 *
+	 * @return \WC_Order|false The order object if found, false otherwise.
+	 */
+	public static function get_order_by_payment_id( $payment_id ) {
+		$orders = wc_get_orders(
+			array(
+				'meta_key'   => '_zaver_payment_id',
+				'meta_value' => $payment_id,
+				'limit'      => 1,
+				'orderby'    => 'date',
+				'order'      => 'DESC',
+				'return'     => 'objects',
+			)
+		);
+
+		$order = reset( $orders );
+		if ( empty( $order ) || $order->get_meta( '_zaver_payment_id' ) !== $payment_id ) {
+			return false;
+		}
+
+		return $order;
+	}
 }

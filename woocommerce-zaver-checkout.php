@@ -228,9 +228,17 @@ class Plugin {
 
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 
-		$this->logger        = new Logger( 'zaver_checkout', 'Zaver Checkout' );
-		$this->system_report = new SystemReport( 'zaver_checkout', 'Zaver Checkout', array() );
+		$included_settings   = array(
+			array(
+				'type'       => 'title',
+				'is_section' => true,
+			),
+			array( 'type' => 'checkbox' ),
+		);
+		$this->system_report = new SystemReport( 'zaver_checkout', 'Zaver Checkout', $included_settings );
+		$this->logger        = new Logger( 'zaver_checkout', wc_string_to_bool( $settings['logging'] ?? false ) );
 		$this->session       = new Classes\Session();
+
 		Hooks::instance();
 	}
 
@@ -295,7 +303,8 @@ class Plugin {
 	public function include_files() {
 
 		// Classes.
-		include_once ZCO_PLUGIN_PATH . '/classes/class-zaver-checkout-settings.php';
+		include_once ZCO_PLUGIN_PATH . '/classes/settings.php';
+		include_once ZCO_PLUGIN_PATH . '/classes/order-management.php';
 		include_once ZCO_PLUGIN_PATH . '/classes/checkout-gateway.php';
 		include_once ZCO_PLUGIN_PATH . '/classes/helper.php';
 		include_once ZCO_PLUGIN_PATH . '/classes/hooks.php';

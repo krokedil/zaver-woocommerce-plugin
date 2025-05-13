@@ -10,9 +10,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class for Dintero settings
+ * Class for plugin settings.
  */
-class Zaver_Checkout_Settings {
+class Settings {
 
 	/**
 	 * Returns the settings fields.
@@ -110,6 +110,7 @@ class Zaver_Checkout_Settings {
 			),
 		);
 
+		$settings = KrokedilZCODeps\Krokedil\Support\Logger::add_settings_fields( $settings );
 		return apply_filters( 'zaver_checkout_settings', $settings );
 	}
 }

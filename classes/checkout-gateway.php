@@ -14,7 +14,7 @@ use KrokedilZCODeps\Zaver\SDK\Object\RefundResponse;
 use WC_Order;
 use WC_Payment_Gateway;
 use Exception;
-use Zaver_Checkout_Settings;
+use Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -76,7 +76,7 @@ class Checkout_Gateway extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function init_form_fields() {
-		$this->form_fields = Zaver_Checkout_Settings::setting_fields();
+		$this->form_fields = Settings::setting_fields();
 	}
 
 	/**
@@ -125,6 +125,27 @@ class Checkout_Gateway extends WC_Payment_Gateway {
 	 */
 	private function check_availability() {
 		return $this->get_option( 'enabled' ) === 'yes' && ! ZCO()->separate_payment_methods_enabled();
+	}
+
+	/**
+	 * Check if the gateway is the chosen payment method.
+	 *
+	 * Due to inconsistencies in the gateway name, we need to check for the presence of 'zaver_checkout'.
+	 *
+	 * @param int|null|\WC_Order $order_id The WooCommerce order or its id. If `null`, the current session is used.
+	 * @return bool
+	 */
+	public function is_chosen_gateway( $order_id = null ) {
+		if ( $order_id instanceof \WC_Order ) {
+			$chosen_gateway = $order_id->get_payment_method();
+		} elseif ( ! empty( $order_id ) ) {
+			$order          = wc_get_order( $order_id );
+			$chosen_gateway = empty( $order ) ? '' : $order->get_payment_method();
+		} else {
+			$chosen_gateway = ! isset( WC()->session ) ? '' : WC()->session->get( 'chosen_payment_method' );
+		}
+
+		return strpos( $chosen_gateway, 'zaver_checkout' ) !== false;
 	}
 
 	/**
@@ -221,8 +242,8 @@ class Checkout_Gateway extends WC_Payment_Gateway {
 			return false;
 		}
 
-		$payment = $order->get_meta( '_zaver_payment' );
-		return ! isset( $payment['id'] );
+		$payment_id = $order->get_meta( '_zaver_payment' )['id'] ?? $order->get_meta( '_zaver_payment_id' );
+		return ! empty( $payment_id );
 	}
 
 
