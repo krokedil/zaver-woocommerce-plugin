@@ -25,7 +25,6 @@ namespace Zaver;
 use Krokedil\Zaver\PaymentMethods;
 use KrokedilZCODeps\Krokedil\Support\Logger;
 use KrokedilZCODeps\Krokedil\Support\SystemReport;
-use Zaver_Checkout_Order_Management;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -108,14 +107,14 @@ class Plugin {
 	/**
 	 * Session management.
 	 *
-	 * @var Classes\Session
+	 * @var Session
 	 */
 	private $session;
 
 	/**
 	 * Order management.
 	 *
-	 * @var Zaver_Checkout_Order_Management
+	 * @var Order_Management
 	 */
 	private $order_management;
 
@@ -155,7 +154,7 @@ class Plugin {
 	/**
 	 * Get the session instance.
 	 *
-	 * @return Classes\Session
+	 * @return Session
 	 */
 	public function session() {
 		return $this->session;
@@ -164,7 +163,7 @@ class Plugin {
 	/**
 	 * Get the order management instance.
 	 *
-	 * @return Zaver_Checkout_Order_Management
+	 * @return Order_Management
 	 */
 	public function order_management() {
 		return $this->order_management;
@@ -244,7 +243,6 @@ class Plugin {
 		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'add_settings_link' ) );
 
 		add_action( 'init', array( $this, 'load_textdomain' ) );
-		add_action( 'before_woocommerce_init', array( $this, 'declare_wc_compatibility' ) );
 
 		$included_settings      = array(
 			array(
@@ -256,7 +254,7 @@ class Plugin {
 		$this->system_report    = new SystemReport( 'zaver_checkout', 'Zaver Checkout', $included_settings );
 		$this->logger           = new Logger( 'zaver_checkout', wc_string_to_bool( $settings['logging'] ?? false ) );
 		$this->session          = new Session();
-		$this->order_management = Zaver_Checkout_Order_Management::get_instance();
+		$this->order_management = Order_Management::get_instance();
 
 		Hooks::instance();
 	}
@@ -269,19 +267,6 @@ class Plugin {
 	public function load_textdomain() {
 		load_plugin_textdomain( 'zco', false, plugin_basename( __DIR__ ) . '/languages' );
 	}
-
-		/**
-		 * Declare compatibility with WooCommerce features.
-		 *
-		 * @return void
-		 */
-	public function declare_wc_compatibility() {
-		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
-			// Declare HPOS compatibility.
-			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
-		}
-	}
-
 
 	/**
 	 * Initialize composers autoloader.
@@ -335,8 +320,8 @@ class Plugin {
 	public function include_files() {
 
 		// Classes.
-		include_once ZCO_PLUGIN_PATH . '/classes/class-zaver-checkout-settings.php';
-		include_once ZCO_PLUGIN_PATH . '/classes/class-zaver-checkout-order-management.php';
+		include_once ZCO_PLUGIN_PATH . '/classes/settings.php';
+		include_once ZCO_PLUGIN_PATH . '/classes/order-management.php';
 		include_once ZCO_PLUGIN_PATH . '/classes/checkout-gateway.php';
 		include_once ZCO_PLUGIN_PATH . '/classes/helper.php';
 		include_once ZCO_PLUGIN_PATH . '/classes/hooks.php';

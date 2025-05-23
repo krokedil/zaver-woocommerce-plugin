@@ -11,6 +11,8 @@ use Exception;
 use WC_Order;
 use KrokedilZCODeps\Zaver\SDK\Config\PaymentStatus;
 use KrokedilZCODeps\Zaver\SDK\Object\PaymentStatusResponse;
+use Zaver\Classes\Helpers\Order;
+use Zaver\Order_Management as OM;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -30,12 +32,12 @@ class Payment_Processor {
 	 * @return void
 	 */
 	public static function process( $order ) {
-		$payment = Classes\Helpers\Order::create( $order );
+		$payment = Order::create( $order );
 
 		do_action( 'zco_before_process_payment', $payment, $order );
 		$response = Plugin::gateway()->api()->createPayment( $payment );
 		ZCO()->logger()->info(
-			'[PROCESS PAYMENT]: Created Zaver payment request',
+			'Created Zaver payment request',
 			array(
 				'payload'   => $payment,
 				'response'  => $response,
@@ -62,6 +64,7 @@ class Payment_Processor {
 			$order->update_meta_data( '_zaver_payment_link', $response->getPaymentLink() );
 		}
 
+		$order->update_meta_data( '_zaver_payment_id', $response->getPaymentId() );
 		$order->update_meta_data(
 			'_zaver_payment',
 			array(
@@ -96,67 +99,79 @@ class Payment_Processor {
 	 * @return void
 	 */
 	public static function handle_response( $order, $payment_status = null, $redirect = true ) {
-
-		// Checks for if the date paid is set to allow canceled (due to hold stock setting) ordered to be processed in case the customer takes longer time to return from Zaver to the store than expected.
-		if ( ! empty( $order->get_date_paid() ) ) {
-			ZCO()->logger()->debug(
-				'[CALLBACK]: Zaver payment do not need payment',
-				array(
-					'orderId'     => $order->get_id(),
-					'orderNumber' => $order->get_order_number(),
-				)
-			);
-
-			return;
-		}
-
 		// Ensure that the order key is correct.
 		$key = filter_input( INPUT_GET, 'key', FILTER_SANITIZE_SPECIAL_CHARS );
 		if ( empty( $key ) || ! hash_equals( $order->get_order_key(), $key ) ) {
 			throw new Exception( 'Invalid order key' );
 		}
 
-		$payment = $order->get_meta( '_zaver_payment' );
-		if ( ! isset( $payment['id'] ) ) {
+		$payment_id = $order->get_meta( '_zaver_payment' )['id'] ?? $order->get_meta( '_zaver_payment_id' );
+		if ( empty( $payment_id ) ) {
 			throw new Exception( 'Missing payment ID on order' );
 		}
 
 		if ( null === $payment_status ) {
-			$payment_status = Plugin::gateway()->api()->getPaymentStatus( $payment['id'] );
+			$payment_status = Plugin::gateway()->api()->getPaymentStatus( $payment_id );
 			ZCO()->logger()->info(
-				'[CALLBACK]: Fetched payment status from Zaver',
+				'Fetched payment status from Zaver',
 				array(
-					'payload'  => $payment['id'],
+					'payload'  => $payment_id,
 					'response' => $payment_status,
 					'orderId'  => $order->get_id(),
 				)
 			);
-		} elseif ( $payment_status->getPaymentId() !== $payment['id'] ) {
+		} elseif ( $payment_status->getPaymentId() !== $payment_id ) {
 			throw new Exception( 'Mismatching payment ID' );
 		}
 
 		do_action( 'zco_process_payment_handle_response', $order, $payment_status, $redirect );
 
 		switch ( $payment_status->getPaymentStatus() ) {
-			case PaymentStatus::CREATED:
-				break;
 			case PaymentStatus::SETTLED:
-				ZCO()->logger()->info(
-					'[CALLBACK]: Successful payment with Zaver',
-					array(
-						'orderId'   => $order->get_id(),
-						'paymentId' => $payment_status->getPaymentId(),
-					)
-				);
-				// translators: %s is the payment ID.
-				$order->add_order_note( sprintf( __( 'Successful payment with Zaver - payment ID: %s.', 'zco' ), $payment_status->getPaymentId() ) );
-				$order->payment_complete( $payment_status->getPaymentId() );
+				// When the order is initially created, the captured amount is zero. If it is non-zero, it means the payment was settled immediately (e.g., bank transfer).
+				if ( 0 >= ( $payment_status->getCapturedAmount() * 100 ) ) {
+					ZCO()->logger()->info(
+						'Successful payment with Zaver',
+						array(
+							'orderId'   => $order->get_id(),
+							'paymentId' => $payment_status->getPaymentId(),
+						)
+					);
+					// translators: %s is the payment ID.
+					$order->add_order_note( sprintf( __( 'Successful payment with Zaver - payment ID: %s.', 'zco' ), $payment_status->getPaymentId() ) );
+					$order->payment_complete( $payment_status->getPaymentId() );
+
+					// Adds the metadata to allow the capture to be processed from the admin dashboard.
+					OM::set_as_captured( $order );
+
+				} else {
+					$currency            = $payment_status->getCurrency();
+					$captured            = OM::format_price( $payment_status->getCapturedAmount(), $currency );
+					$remaining           = $payment_status->getAmount() - $captured;
+					$formatted_remaining = OM::format_price( $remaining, $currency );
+					ZCO()->logger()->info(
+						'Zaver payment was captured',
+						array(
+							'orderId'         => $order->get_id(),
+							'paymentId'       => $payment_status->getPaymentId(),
+							'capturedAmount'  => $captured,
+							'remainingAmount' => $formatted_remaining,
+						)
+					);
+					// translators: %1$s is the payment ID, %2$s is the captured amount, %3$s is the remaining amount to capture.
+					$order->add_order_note( sprintf( __( 'Zaver payment was captured - payment ID: %1$s. Captured amount: %2$s. Remaining amount to capture: %3$s.', 'zco' ), $payment_status->getPaymentId(), $captured, $formatted_remaining ) );
+
+					if ( ( $remaining * 100 ) <= 0 ) {
+						// Adds the metadata to allow the capture to be processed from the admin dashboard.
+						OM::set_as_captured( $order );
+					}
+				}
 
 				break;
 
 			case PaymentStatus::CANCELLED:
 				ZCO()->logger()->info(
-					'[CALLBACK]: Zaver Payment was cancelled',
+					'Zaver Payment was cancelled',
 					array(
 						'orderId'   => $order->get_id(),
 						'paymentId' => $payment_status->getPaymentId(),
@@ -173,7 +188,7 @@ class Payment_Processor {
 
 			case PaymentStatus::PENDING:
 				ZCO()->logger()->info(
-					'[CALLBACK]: Zaver payment is pending merchant capture',
+					'Zaver payment is pending merchant capture',
 					array(
 						'orderId'   => $order->get_id(),
 						'paymentId' => $payment_status->getPaymentId(),
@@ -189,7 +204,7 @@ class Payment_Processor {
 
 			case PaymentStatus::PENDING_CONFIRMATION:
 				ZCO()->logger()->info(
-					'[CALLBACK]: Zaver payment is pending confirmation',
+					'Zaver payment is pending confirmation',
 					array(
 						'orderId'   => $order->get_id(),
 						'paymentId' => $payment_status->getPaymentId(),
@@ -202,7 +217,7 @@ class Payment_Processor {
 
 			default:
 				ZCO()->logger()->error(
-					'[CALLBACK]: Received unhandled payment status from Zaver',
+					'Received unhandled payment status from Zaver',
 					array(
 						'orderId'       => $order->get_id(),
 						'paymentId'     => $payment_status->getPaymentId(),

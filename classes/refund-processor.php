@@ -45,16 +45,16 @@ class Refund_Processor {
 	 * @throws Exception When the refund ID is missing.
 	 */
 	public static function process( $order, $amount ) {
-		$payment = $order->get_meta( '_zaver_payment' );
 
-		if ( ! isset( $payment['id'] ) ) {
+		$payment_id = $order->get_meta( '_zaver_payment' )['id'] ?? $order->get_meta( '_zaver_payment_id' );
+		if ( empty( $payment_id ) ) {
 			throw new Exception( 'Missing Zaver payment ID for order' );
 		}
 
 		$refund = self::find_refund( $order, $amount );
 
 		$request = RefundCreationRequest::create()
-			->setPaymentId( $payment['id'] )
+			->setPaymentId( $payment_id )
 			->setInvoiceReference( $order->get_order_number() )
 			->setRefundAmount( abs( $refund->get_amount() ) )
 			->setMerchantMetadata(
@@ -67,7 +67,7 @@ class Refund_Processor {
 				)
 			);
 
-		$types = array( 'line_item', 'shipping', 'fee' );
+		$types = array( 'line_item', 'shipping', 'fee', 'coupon' );
 
 		// Refunded line items.
 		$items = $refund->get_items( $types );
@@ -111,24 +111,16 @@ class Refund_Processor {
 
 		$response = Plugin::gateway()->refund_api()->createRefund( $request );
 
-		$refund_ids = $order->get_meta( '_zaver_refund_ids' );
-		if ( empty( $refund_ids ) || ! is_array( $refund_ids ) ) {
-			$refund_ids = array();
-		}
-		$refund_ids[] = $response->getRefundId();
-
-		$order->update_meta_data( '_zaver_refund_ids', $refund_ids );
 		$refund->update_meta_data( '_zaver_refund_id', $response->getRefundId() );
 
 		// translators: 1: Refund amount, 2: Refund currency, 3: Refund ID.
 		$order->add_order_note( sprintf( __( 'Requested a refund of %1$F %2$s - refund ID: %3$s', 'zco' ), $response->getRefundAmount(), $response->getCurrency(), $response->getRefundId() ) );
 
 		$refund->save();
-		$order->save();
 
 		ZCO()->logger()->info(
 			sprintf(
-				'[PROCESS REFUND]: Requested a refund of %F %s',
+				'Requested a refund of %F %s',
 				$response->getRefundAmount(),
 				$response->getCurrency()
 			),
@@ -260,7 +252,7 @@ class Refund_Processor {
 			throw new Exception( 'Missing refund ID on order' );
 		}
 
-		if ( ! in_array( $refund->getRefundId(), $refund_ids, true ) ) {
+		if ( ! in_array( $refund->getPaymentId(), $refund_ids, true ) ) {
 			throw new Exception( 'Mismatching refund ID' );
 		}
 
@@ -279,7 +271,7 @@ class Refund_Processor {
 
 				ZCO()->logger()->info(
 					sprintf(
-						'[REFUND CALLBACK]: Refund of %F %s approved',
+						'Refund of %F %s approved',
 						$refund->getRefundAmount(),
 						$refund->getCurrency()
 					),
@@ -302,7 +294,7 @@ class Refund_Processor {
 
 				ZCO()->logger()->info(
 					sprintf(
-						'[REFUND CALLBACK]: Refund of %F %s approved',
+						'Refund of %F %s approved',
 						$refund->getRefundAmount(),
 						$refund->getCurrency()
 					),
@@ -318,7 +310,7 @@ class Refund_Processor {
 				$order->add_order_note( sprintf( __( 'Refund of %1$F %2$s completed - Refund ID: %3$s', 'zco' ), $refund->getRefundAmount(), $refund->getCurrency(), $refund->getRefundId() ) );
 				ZCO()->logger()->info(
 					sprintf(
-						'[REFUND CALLBACK]: Refund of %F %s completed',
+						'Refund of %F %s completed',
 						$refund->getRefundAmount(),
 						$refund->getCurrency()
 					),
@@ -341,7 +333,7 @@ class Refund_Processor {
 
 				ZCO()->logger()->info(
 					sprintf(
-						'[REFUND CALLBACK]: Refund of %F %s cancelled',
+						'Refund of %F %s cancelled',
 						$refund->getRefundAmount(),
 						$refund->getCurrency()
 					),

@@ -13,7 +13,6 @@ use WC_Product;
 use WC_Tax;
 use WP_Error;
 use KrokedilZCODeps\Zaver\SDK\Config\ItemType;
-use KrokedilZCODeps\Zaver\SDK\Utils\Error;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -86,27 +85,30 @@ class Helper {
 		return strncmp( $url, 'https:', 6 ) === 0;
 	}
 
-
 	/**
-	 * Extends the error logging with request and response data.
+	 * Get the order by payment ID.
 	 *
-	 * @param Exception|Error $e The exception to log.
-	 * @param array           $arr The array to extend with additional data.
-	 * @return array The same or extended array if ZaverError.
+	 * @param string $payment_id The payment ID to search for.
+	 *
+	 * @return \WC_Order|false The order object if found, false otherwise.
 	 */
-	public static function add_request_log_context( $e, $arr ) {
-		if ( ! $e instanceof Error ) {
-			return $arr;
-		}
-
-		$arr = array_merge(
-			$arr,
+	public static function get_order_by_payment_id( $payment_id ) {
+		$orders = wc_get_orders(
 			array(
-				'request'  => $e->getRequestBody(),
-				'response' => $e->getResponseBody(),
+				'meta_key'   => '_zaver_payment_id',
+				'meta_value' => $payment_id,
+				'limit'      => 1,
+				'orderby'    => 'date',
+				'order'      => 'DESC',
+				'return'     => 'objects',
 			)
 		);
 
-		return $arr;
+		$order = reset( $orders );
+		if ( empty( $order ) || $order->get_meta( '_zaver_payment_id' ) !== $payment_id ) {
+			return false;
+		}
+
+		return $order;
 	}
 }

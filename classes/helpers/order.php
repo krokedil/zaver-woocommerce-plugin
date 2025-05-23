@@ -83,8 +83,7 @@ class Order {
 			);
 
 		$merchant_urls = MerchantUrls::create()
-			->setSuccessUrl( Plugin::gateway()->get_return_url( $order ) )
-			->setCancelUrl( wc_get_checkout_url() );
+			->setSuccessUrl( Plugin::gateway()->get_return_url( $order ) );
 
 		$callback_url = self::get_callback_url( $order );
 		if ( ! empty( $callback_url ) ) {
@@ -121,6 +120,8 @@ class Order {
 				self::prepare_shipping( $line_item, $item );
 			} elseif ( $item->is_type( 'fee' ) ) {
 				self::prepare_fee( $line_item, $item );
+			} elseif ( $item->is_type( 'coupon' ) ) {
+				self::prepare_coupon( $line_item, $item );
 			}
 
 			$line_items[] = $line_item;

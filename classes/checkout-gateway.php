@@ -14,8 +14,7 @@ use KrokedilZCODeps\Zaver\SDK\Object\RefundResponse;
 use WC_Order;
 use WC_Payment_Gateway;
 use Exception;
-use KrokedilZCODeps\Zaver\SDK\Utils\Error;
-use Zaver_Checkout_Settings;
+use Zaver\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -77,7 +76,7 @@ class Checkout_Gateway extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function init_form_fields() {
-		$this->form_fields = Zaver_Checkout_Settings::setting_fields();
+		$this->form_fields = Settings::setting_fields();
 	}
 
 	/**
@@ -106,15 +105,6 @@ class Checkout_Gateway extends WC_Payment_Gateway {
 	 */
 	public function get_description() {
 		return $this->get_option( 'description' );
-	}
-
-	/**
-	 * If order management is enabled or not.
-	 *
-	 * @return bool
-	 */
-	public function is_order_management_enabled() {
-		return $this->get_option( 'order_management_enabled' ) === 'yes';
 	}
 
 	/**
@@ -188,8 +178,8 @@ class Checkout_Gateway extends WC_Payment_Gateway {
 					'redirect' => $redirect_url,
 				)
 			);
-		} catch ( Exception | Error $e ) {
-			ZCO()->logger()->error( sprintf( 'Zaver error during payment process: %s', $e->getMessage() ), Helper::add_request_log_context( $e, array( 'orderId' => $order_id ) ) );
+		} catch ( Exception $e ) {
+			ZCO()->logger()->error( sprintf( 'Zaver error during payment process: %s', $e->getMessage() ), array( 'orderId' => $order_id ) );
 
 			$message = __( 'An error occurred - please try again, or contact site support', 'zco' );
 			wc_add_notice( $message, 'error' );
@@ -224,19 +214,16 @@ class Checkout_Gateway extends WC_Payment_Gateway {
 			Refund_Processor::process( $order, (float) $amount );
 
 			return true;
-		} catch ( Exception | Error $e ) {
+		} catch ( Exception $e ) {
 			ZCO()->logger()->error(
 				sprintf(
 					'Zaver error during refund process: %s',
 					$e->getMessage()
 				),
-				Helper::add_request_log_context(
-					$e,
-					array(
-						'orderId' => $order_id,
-						'amount'  => $amount,
-						'reason'  => $reason,
-					)
+				array(
+					'orderId' => $order_id,
+					'amount'  => $amount,
+					'reason'  => $reason,
 				)
 			);
 
@@ -255,8 +242,8 @@ class Checkout_Gateway extends WC_Payment_Gateway {
 			return false;
 		}
 
-		$payment = $order->get_meta( '_zaver_payment' );
-		return isset( $payment['id'] );
+		$payment_id = $order->get_meta( '_zaver_payment' )['id'] ?? $order->get_meta( '_zaver_payment_id' );
+		return ! empty( $payment_id );
 	}
 
 
