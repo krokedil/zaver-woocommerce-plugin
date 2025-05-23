@@ -13,6 +13,7 @@ use WC_Product;
 use WC_Tax;
 use WP_Error;
 use KrokedilZCODeps\Zaver\SDK\Config\ItemType;
+use KrokedilZCODeps\Zaver\SDK\Utils\Error;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -83,5 +84,29 @@ class Helper {
 		$url = strtolower( home_url() );
 
 		return strncmp( $url, 'https:', 6 ) === 0;
+	}
+
+
+	/**
+	 * Extends the error logging with request and response data.
+	 *
+	 * @param Exception|Error $e The exception to log.
+	 * @param array           $arr The array to extend with additional data.
+	 * @return array The same or extended array if ZaverError.
+	 */
+	public static function add_request_log_context( $e, $arr ) {
+		if ( ! $e instanceof Error ) {
+			return $arr;
+		}
+
+		$arr = array_merge(
+			$arr,
+			array(
+				'request'  => $e->getRequestBody(),
+				'response' => $e->getResponseBody(),
+			)
+		);
+
+		return $arr;
 	}
 }

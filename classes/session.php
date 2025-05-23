@@ -5,9 +5,11 @@
  * @package ZCO/Classes
  */
 
-namespace Zaver\Classes;
+namespace Zaver;
 
 use KrokedilZCODeps\Zaver\SDK\Object\PaymentMethodsRequest;
+use KrokedilZCODeps\Zaver\SDK\Utils\Error;
+use Zaver\Helper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -77,7 +79,7 @@ class Session {
 			->setCurrency( $currency );
 			$payment_methods         = \Zaver\Plugin::gateway()->api()->getPaymentMethods( $payment_methods_request )->getPaymentMethods();
 			\Zaver\ZCO()->logger()->info(
-				'Received payment methods',
+				'[SESSION]: Received payment methods',
 				array(
 					'payload'        => wp_json_encode( $payment_methods_request ),
 					'paymentMethods' => $payment_methods,
@@ -86,18 +88,21 @@ class Session {
 
 			$available_payment_methods[ $market ][ $currency ][ $total ] = $payment_methods;
 			WC()->session->set( 'zaver_checkout_available_payment_methods', $available_payment_methods );
-		} catch ( \Exception $e ) {
+		} catch ( \Exception | Error $e ) {
 			\Zaver\ZCO()->logger()->critical(
-				'Failed to retrieve payment methods',
-				array(
-					'payload' => array(
-						'total'    => $total,
-						'market'   => $market,
-						'currency' => $currency,
-					),
-					'code'    => $e->getCode(),
-					'message' => $e->getMessage(),
-					'trace'   => $e->getTraceAsString(),
+				'[SESSION]: Failed to retrieve payment methods',
+				Helper::add_request_log_context(
+					$e,
+					array(
+						'payload' => array(
+							'total'    => $total,
+							'market'   => $market,
+							'currency' => $currency,
+						),
+						'code'    => $e->getCode(),
+						'message' => $e->getMessage(),
+						'trace'   => $e->getTraceAsString(),
+					)
 				)
 			);
 		}
