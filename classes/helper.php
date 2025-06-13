@@ -111,4 +111,15 @@ class Helper {
 
 		return $order;
 	}
+
+	/**
+	 * Format a number to two decimals.
+	 *
+	 * @param float|string $number The number to format.
+	 *
+	 * @return float
+	 */
+	public static function format_number( $number ) {
+		return floatval( number_format( floatval( $number ), 2, '.', '' ) );
+	}
 }

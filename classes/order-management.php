@@ -65,6 +65,40 @@ class Order_Management {
 	public function __construct() {
 		add_action( 'woocommerce_order_status_completed', array( $this, 'capture_order' ), 10, 2 );
 		add_action( 'woocommerce_order_status_cancelled', array( $this, 'cancel_order' ), 10, 2 );
+
+		// Conditionally check whether the refund button on the order edit page should be rendered.
+		add_filter( 'woocommerce_admin_order_should_render_refunds', array( $this, 'maybe_render_refunds' ), 10, 3 );
+	}
+
+	/**
+	 * Conditionally checks whether the refund button on the order edit page should be rendered.
+	 *
+	 * @param boolean   $should_render Whether the refund button should be rendered.
+	 * @param int       $order_id The WooCommerce order ID.
+	 * @param \WC_Order $order The WooCommerce order object.
+	 * @return boolean Whether the refund button should be rendered.
+	 */
+	public function maybe_render_refunds( $should_render, $order_id, $order ) {
+		if ( ! Plugin::gateway()->is_chosen_gateway( $order ) ) {
+			return $should_render;
+		}
+
+		try {
+			// If it has not been refunded as indicated by the metadata, issue a request to Zaver to check if it can be refunded.
+			$can_refund = empty( $order->get_meta( self::REFUNDED ) );
+			if ( $can_refund ) {
+				$payment_status = Plugin::gateway()->api()->getPaymentStatus( $order->get_transaction_id() );
+				$can_refund     = self::can_refund( $payment_status );
+				if ( ! $can_refund ) {
+					$order->update_meta_data( self::REFUNDED, $order->get_meta( '_zaver_refund_id' ) );
+					$order->save_meta_data();
+				}
+			}
+
+			return $can_refund;
+		} catch ( \Exception $e ) {
+			return $should_render;
+		}
 	}
 
 	/**
@@ -72,7 +106,7 @@ class Order_Management {
 	 *
 	 * Allows orders settled immediately or through the merchant portal to be 'Completed' in WooCommerce.
 	 *
-	 * @param WC_Order $order The WooCommerce order object.
+	 * @param \WC_Order $order The WooCommerce order object.
 	 * @return void
 	 */
 	public static function set_as_captured( $order ) {
@@ -85,8 +119,8 @@ class Order_Management {
 	 *
 	 * @throws Error If the Zaver rejects the capture request.
 	 *
-	 * @param int      $order_id The WooCommerce order id.
-	 * @param WC_Order $order The WooCommerce order object.
+	 * @param int       $order_id The WooCommerce order id.
+	 * @param \WC_Order $order The WooCommerce order object.
 	 * @return void
 	 */
 	public function capture_order( $order_id, $order ) {
@@ -150,8 +184,8 @@ class Order_Management {
 	/**
 	 * Cancels the Zaver order that the WooCommerce order corresponds to.
 	 *
-	 * @param int      $order_id The WooCommerce order id.
-	 * @param WC_Order $order The WooCommerce order object.
+	 * @param int       $order_id The WooCommerce order id.
+	 * @param \WC_Order $order The WooCommerce order object.
 	 * @return void
 	 */
 	public function cancel_order( $order_id, $order ) {
@@ -232,12 +266,12 @@ class Order_Management {
 	/**
 	 * Format the price for display.
 	 *
-	 * @param string $amount The amount to format.
-	 * @param string $currency The currency.
+	 * @param float|string $amount The amount to format.
+	 * @param string       $currency The currency.
 	 * @return string The formatted price.
 	 */
-	public static function format_price( $amount, $currency ) {
-		return number_format_i18n( preg_replace( '/[.,]/', wc_get_price_decimal_separator(), $amount, 1 ), 2 ) . " {$currency}";
+	public static function format_price( $amount, $currency = '' ) {
+		return wc_price( $amount, array( 'currency' => $currency ) );
 	}
 }
 
