@@ -64,6 +64,7 @@ class Payment_Processor {
 			$order->update_meta_data( '_zaver_payment_link', $response->getPaymentLink() );
 		}
 
+		$order->update_meta_data( '_zaver_status_history', array( $response->getPaymentStatus() ) );
 		$order->update_meta_data( '_zaver_payment_id', $response->getPaymentId() );
 		$order->update_meta_data(
 			'_zaver_payment',
@@ -124,16 +125,35 @@ class Payment_Processor {
 			throw new Exception( 'Mismatching payment ID' );
 		}
 
+		// To prevent processing the same payment status multiple times, we keep track of the status history.
+		$status_history = $order->get_meta( '_zaver_status_history' );
+		$new_status     = $payment_status->getPaymentStatus();
+
+		if ( in_array( $new_status, $status_history, true ) ) {
+			ZCO()->logger()->debug(
+				"Received an already processed payment status from Zaver: $new_status",
+				array(
+					'orderId'       => $order->get_id(),
+					'paymentId'     => $payment_status->getPaymentId(),
+					'paymentStatus' => $payment_status->getPaymentStatus(),
+					'statusHistory' => $status_history,
+				)
+			);
+
+			return;
+		} else {
+			$status_history[] = $new_status;
+			$order->update_meta_data( '_zaver_status_history', $status_history );
+			$order->save_meta_data();
+
+		}
+
 		do_action( 'zco_process_payment_handle_response', $order, $payment_status, $redirect );
 
 		switch ( $payment_status->getPaymentStatus() ) {
 			case PaymentStatus::SETTLED:
 				// When the order is initially created, the captured amount is zero. If it is non-zero, it means the payment was settled immediately (e.g., bank transfer).
 				if ( 0 >= ( $payment_status->getCapturedAmount() * 100 ) ) {
-					if ( ! empty( $order->get_date_paid() ) ) {
-						break;
-					}
-
 					ZCO()->logger()->info(
 						'Successful payment with Zaver',
 						array(
@@ -149,6 +169,7 @@ class Payment_Processor {
 					OM::set_as_captured( $order );
 
 				} else {
+					// Handle capture request from Zaver.
 					$currency            = $payment_status->getCurrency();
 					$captured            = $payment_status->getCapturedAmount();
 					$remaining           = $payment_status->getAmount() - $captured;
