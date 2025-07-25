@@ -111,6 +111,28 @@ class Settings {
 				'label'   => __( 'Enable "Vipps" payment as separate payment method', 'zco' ),
 				'default' => 'yes',
 			),
+			'order_management_title'              => array(
+				'type'  => 'title',
+				'title' => __( 'Order management', 'zco' ),
+			),
+			'order_management_enable_capture'     => array(
+				'title'   => __( 'Automatic capture', 'zco' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Automatically capture Zaver payments when WooCommerce order is marked as Completed.', 'zco' ),
+				'default' => 'yes',
+			),
+			'order_management_enable_cancel'      => array(
+				'title'   => __( 'Automatic cancel', 'zco' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Automatically cancel Zaver payments when WooCommerce order is marked as Cancelled.', 'zco' ),
+				'default' => 'yes',
+			),
+			'order_management_enable_refund'      => array(
+				'title'   => __( 'Automatic refund', 'zco' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Automatically refund Zaver payments when WooCommerce order is refunded partially or in full.', 'zco' ),
+				'default' => 'yes',
+			),
 		);
 
 		$settings = Logger::add_settings_fields( $settings );
