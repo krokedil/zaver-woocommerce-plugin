@@ -63,8 +63,14 @@ class Order_Management {
 	 * Class constructor.
 	 */
 	public function __construct() {
-		add_action( 'woocommerce_order_status_completed', array( $this, 'capture_order' ), 10, 2 );
-		add_action( 'woocommerce_order_status_cancelled', array( $this, 'cancel_order' ), 10, 2 );
+		$settings = get_option( 'woocommerce_zaver_checkout_settings', array() );
+		if ( wc_string_to_bool( $settings['order_management_enable_capture'] ?? 'yes' ) ) {
+			add_action( 'woocommerce_order_status_completed', array( $this, 'capture_order' ), 10, 2 );
+		}
+
+		if ( wc_string_to_bool( $settings['order_management_enable_cancel'] ?? 'yes' ) ) {
+			add_action( 'woocommerce_order_status_cancelled', array( $this, 'cancel_order' ), 10, 2 );
+		}
 	}
 
 	/**
