@@ -71,6 +71,12 @@ class Settings {
 				'title'       => __( 'Callback Token', 'zco' ),
 				'description' => __( 'The callback token is optional but recommended - it is used to validate requests from Zaver.', 'zco' ),
 			),
+			'order_management'                    => array(
+				'title'   => __( 'Enable Order Management', 'zco' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable Zaver order capture on WooCommerce order completion and Zaver order cancellation on WooCommerce order cancellation', 'zco' ),
+				'default' => 'yes',
+			),
 			'separate_payment_methods_title'      => array(
 				'type'  => 'title',
 				'title' => __( 'Show as separate payment methods', 'zco' ),
@@ -109,28 +115,6 @@ class Settings {
 				'title'   => __( 'Vipps', 'zco' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable "Vipps" payment as separate payment method', 'zco' ),
-				'default' => 'yes',
-			),
-			'order_management_title'              => array(
-				'type'  => 'title',
-				'title' => __( 'Order management', 'zco' ),
-			),
-			'order_management_enable_capture'     => array(
-				'title'   => __( 'Automatic capture', 'zco' ),
-				'type'    => 'checkbox',
-				'label'   => __( 'Automatically capture Zaver payments when WooCommerce order is marked as Completed.', 'zco' ),
-				'default' => 'yes',
-			),
-			'order_management_enable_cancel'      => array(
-				'title'   => __( 'Automatic cancel', 'zco' ),
-				'type'    => 'checkbox',
-				'label'   => __( 'Automatically cancel Zaver payments when WooCommerce order is marked as Cancelled.', 'zco' ),
-				'default' => 'yes',
-			),
-			'order_management_enable_refund'      => array(
-				'title'   => __( 'Automatic refund', 'zco' ),
-				'type'    => 'checkbox',
-				'label'   => __( 'Automatically refund Zaver payments when WooCommerce order is refunded partially or in full.', 'zco' ),
 				'default' => 'yes',
 			),
 		);
