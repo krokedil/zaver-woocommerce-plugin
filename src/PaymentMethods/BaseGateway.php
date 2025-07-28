@@ -198,13 +198,6 @@ abstract class BaseGateway extends WC_Payment_Gateway {
 	 * @return bool|\WP_Error
 	 */
 	public function process_refund( $order_id, $amount = null, $reason = '' ) {
-		$settings = get_option( 'woocommerce_zaver_checkout_settings', array() );
-
-		// Allow refund to go through if the setting is disabled.
-		if ( ! wc_string_to_bool( $settings['order_management_enable_refund'] ?? 'yes' ) ) {
-			return true;
-		}
-
 		try {
 			if ( empty( $amount ) ) {
 				throw new Exception( 'No refund amount specified' );

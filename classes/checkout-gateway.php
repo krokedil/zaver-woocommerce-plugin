@@ -202,10 +202,6 @@ class Checkout_Gateway extends WC_Payment_Gateway {
 	 * @return bool|\WP_Error
 	 */
 	public function process_refund( $order_id, $amount = null, $reason = '' ) {
-		// Allow refund to go through if the setting is disabled.
-		if ( ! wc_string_to_bool( $this->settings['order_management_enable_refund'] ?? 'yes' ) ) {
-			return true;
-		}
 		try {
 			if ( empty( $amount ) ) {
 				throw new Exception( 'No refund amount specified' );
