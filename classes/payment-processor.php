@@ -187,12 +187,16 @@ class Payment_Processor {
 						array(
 							'orderId'         => $order->get_id(),
 							'paymentId'       => $payment_status->getPaymentId(),
-							'capturedAmount'  => OM::format_price( $captured ),
-							'remainingAmount' => $formatted_remaining,
+							'capturedAmount'  => $captured,
+							'remainingAmount' => $remaining,
 						)
 					);
 					// translators: %1$s is the payment ID, %2$s is the captured amount, %3$s is the remaining amount to capture.
 					$order->add_order_note( sprintf( __( 'Zaver payment was captured - payment ID: %1$s. Captured amount: %2$s. Remaining amount to capture: %3$s.', 'zco' ), $payment_status->getPaymentId(), OM::format_price( $captured, $currency ), $formatted_remaining ) );
+
+					if ( empty( $order->get_date_paid() ) ) {
+						$order->payment_complete( $payment_status->getPaymentId() );
+					}
 
 					if ( ( $remaining * 100 ) <= 0 ) {
 						// Adds the metadata to allow the capture to be processed from the admin dashboard.
