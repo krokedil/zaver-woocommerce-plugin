@@ -1,11 +1,11 @@
 === Zaver Checkout for WooCommerce ===
 Contributors: krokedil
 Tags: woocommerce, zaver, checkout, payment, refund, swish
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 Requires at least: 4.7
-Tested up to: 6.8.2
+Tested up to: 6.8.3
 Requires PHP: 7.4
-WC tested up to: 10.1.2
+WC tested up to: 10.2.2
 License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -50,6 +50,9 @@ To get started with Zaver you need to sign up for an account. Once you have gone
 5. Get paid. ✌️
 
 == Changelog ==
+= 2025.10.16    - version 2.0.1 =
+* Fix           - Resolved an issue where the WooCommerce order status was not consistently updated after capturing a payment.
+
 = 2025.09.03    - version 2.0.0 =
 * Feature       - Added support for separate payment methods. This allows you to conditionally show the individual payment methods in the checkout.
 * Feature       - Added support for WooCommerce High-Performance Storage (HPOS).
