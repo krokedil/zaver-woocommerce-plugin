@@ -198,6 +198,8 @@ class Payment_Processor {
 						// Adds the metadata to allow the capture to be processed from the admin dashboard.
 						OM::set_as_captured( $order );
 					}
+
+					$order->payment_complete( $payment_status->getPaymentId() );
 				}
 
 				break;
