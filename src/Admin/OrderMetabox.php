@@ -178,10 +178,8 @@ class OrderMetabox extends \KrokedilZCODeps\Krokedil\WooCommerce\OrderMetabox {
 
 		// If the WooCommerce order total is more then the Zaver payment amount, disable the button.
 		// And set the notice and button type based the difference in totals.
-		$disabled = ( $order_total > $payment_amount ) ? ' disabled' : '';
+		$disabled = $order_total > $payment_amount;
 		$classes  = ( $order_total === $payment_amount ) ? 'button-secondary' : 'button-primary';
-		$notice = ( $order_total === $payment_amount ) ? __( 'Order is already synced with Zaver.', 'zco' ) : '';
-		$notice = ( $order_total > $payment_amount ) ? __( 'The WooCommerce order total is more than the Zaver payment amount, and it can not be synced with Zaver.', 'zco' ) : $notice;
 
 		echo '<br/>';
 		// If the sync is not disabled, print the action button.
@@ -193,15 +191,12 @@ class OrderMetabox extends \KrokedilZCODeps\Krokedil\WooCommerce\OrderMetabox {
 				$classes
 			);
 		} else {
-			// Print the disabled button as a button, since action buttons are links that cant be disabled.
+			// Print the disabled button as a button, since action buttons are links that cant be disabled and add a help tip to explain why.
 			self::output_button(
 				__( 'Sync order with Zaver', 'zco' ),
 				"$classes disabled"
 			);
-		}
-
-		if ( ! empty( $notice ) ) {
-			echo wp_kses_post( wc_help_tip( $notice ) );
+			echo wp_kses_post( wc_help_tip(  __( 'The WooCommerce order total is more than the Zaver payment amount, and it can not be synced with Zaver.', 'zco' ) ) );
 		}
 	}
 }

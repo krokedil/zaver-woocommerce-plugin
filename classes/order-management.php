@@ -320,9 +320,9 @@ class Order_Management {
 			// If the request fails, an ZaverError exception will be thrown. This is caught by WooCommerce which will still complete the status transition, but write an order note about the error, and include the error message from Zaver in that note. Therefore, we don't have to catch the exception here.
 			$request  = new PaymentUpdateRequest(
 				array(
-					'amount'                => $order->get_total(),
-					'currency'              => $order->get_currency(),
-					'lineItems'             => Order::get_line_items( $order ),
+					'amount'    => $order->get_total(),
+					'currency'  => $order->get_currency(),
+					'lineItems' => Order::get_line_items( $order ),
 				)
 			);
 			Plugin::gateway()->api()->updatePayment( $payment_id, $request );
