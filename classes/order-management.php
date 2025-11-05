@@ -14,6 +14,7 @@ use Exception;
 use KrokedilZCODeps\Zaver\SDK\Config\PaymentStatus;
 use KrokedilZCODeps\Zaver\SDK\Object\PaymentCaptureRequest;
 use KrokedilZCODeps\Zaver\SDK\Object\PaymentStatusResponse;
+use KrokedilZCODeps\Zaver\SDK\Object\PaymentUpdateRequest;
 use KrokedilZCODeps\Zaver\SDK\Utils\Error;
 use Zaver\Classes\Helpers\Order;
 
@@ -285,6 +286,52 @@ class Order_Management {
 			return $can_refund;
 		} catch ( \Exception $e ) {
 			return false;
+		}
+	}
+
+	/**
+	 * Update the order in Zaver.
+	 *
+	 * @param \WC_Order $order The WooCommerce order object.
+	 * @param string $payment_id The Zaver payment ID.
+	 * @return void
+	 */
+	public function update_order( $order, $payment_id ) {
+		try {
+			if ( ! Plugin::gateway()->is_chosen_gateway( $order ) ) {
+				return;
+			}
+
+			if ( $order->get_meta( self::CAPTURED ) ) {
+				$order->add_order_note( __( 'The Zaver order was captured and can no longer be updated.', 'zco' ) );
+				return;
+			}
+
+			if ( $order->get_meta( self::CANCELED ) ) {
+				$order->add_order_note( __( 'The Zaver order was canceled and can no longer be updated.', 'zco' ) );
+				return;
+			}
+
+			if ( $order->get_meta( self::REFUNDED ) ) {
+				$order->add_order_note( __( 'The Zaver order has been refunded and can no longer be updated.', 'zco' ) );
+				return;
+			}
+
+			// If the request fails, an ZaverError exception will be thrown. This is caught by WooCommerce which will still complete the status transition, but write an order note about the error, and include the error message from Zaver in that note. Therefore, we don't have to catch the exception here.
+			$request  = new PaymentUpdateRequest(
+				array(
+					'amount'                => $order->get_total(),
+					'currency'              => $order->get_currency(),
+					'lineItems'             => Order::get_line_items( $order ),
+				)
+			);
+			Plugin::gateway()->api()->updatePayment( $payment_id, $request );
+			$order->add_order_note( __( 'The Zaver order has been updated.', 'zco' ) );
+		} catch ( Exception $e ) {
+			ZCO()->logger()->error( sprintf( 'Zaver error when updating order: %s', $e->getMessage() ), Helper::add_zaver_error_details( $e, array( 'orderId' => $order->get_id() ) ) );
+			// translators: The error message.
+			$order->update_status( 'on-hold', sprintf( __( 'Failed to update the Zaver order: %s', 'zco' ), $e->getMessage() ) );
+			$order->save();
 		}
 	}
 
