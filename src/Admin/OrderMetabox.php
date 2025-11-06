@@ -1,6 +1,8 @@
 <?php
 namespace Krokedil\Zaver\Admin;
 
+use Krokedil\Zaver\PaymentMethods\Installments;
+use Krokedil\Zaver\PaymentMethods\PayLater;
 use KrokedilZCODeps\Zaver\SDK\Object\PaymentStatusResponse;
 use Zaver\Helper;
 use Zaver\Order_Management;
@@ -94,6 +96,11 @@ class OrderMetabox extends \KrokedilZCODeps\Krokedil\WooCommerce\OrderMetabox {
 
 			$payment_status = Plugin::gateway()->api()->getPaymentStatus( $order->get_transaction_id() );
 
+			// If the general payment method was used, we need to check the payment method from the payment status response to see if the order can be updated.
+			if ( Plugin::PAYMENT_METHOD === $this->payment_method_id ) {
+				$this->set_can_update_order( $payment_status );
+			}
+
 			$price_format_args = array(
 				'currency' => $payment_status->getCurrency(),
 			);
@@ -137,6 +144,20 @@ class OrderMetabox extends \KrokedilZCODeps\Krokedil\WooCommerce\OrderMetabox {
 	}
 
 	/**
+	 * Set if the order can be updated or not based on the payment method from the payment status response.
+	 *
+	 * @param PaymentStatusResponse $payment_status
+	 * @return void
+	 */
+	private function set_can_update_order( $payment_status ) {
+		// Right now only PAY_LATER and INSTALLMENTS payment methods support updating the order.
+		$valid_payment_methods  = array( 'PAY_LATER', 'INSTALLMENTS' );
+		$can_update_order       = \in_array( $payment_status->getPaymentMethod(), $valid_payment_methods, true );
+
+		$this->can_update_order = apply_filters( 'zco_can_update_order', $can_update_order, $payment_status, $this->payment_method_id );
+	}
+
+	/**
 	 * Create a instance of the order metabox for each payment method.
 	 *
 	 * @param array<string,string> $payment_methods The payment methods. Key is the class, and value is the payment method ID.
@@ -144,7 +165,9 @@ class OrderMetabox extends \KrokedilZCODeps\Krokedil\WooCommerce\OrderMetabox {
 	 */
 	public static function register_for_payment_methods( $payment_methods ) {
 		foreach ( $payment_methods as $payment_method_id ) {
-			new self( $payment_method_id );
+			// Only enable update order for specific payment methods.
+			$can_update_order = \in_array( $payment_method_id, array( Installments::PAYMENT_METHOD_ID, PayLater::PAYMENT_METHOD_ID, Plugin::PAYMENT_METHOD ), true );
+			new self( $payment_method_id, $can_update_order );
 		}
 	}
 
