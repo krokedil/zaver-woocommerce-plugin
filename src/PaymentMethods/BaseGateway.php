@@ -7,6 +7,7 @@
 
 namespace Krokedil\Zaver\PaymentMethods;
 
+use Zaver\Admin\Order_Metabox;
 use Zaver\Payment_Processor;
 use KrokedilZCODeps\Zaver\SDK\Checkout;
 use KrokedilZCODeps\Zaver\SDK\Refund;
@@ -56,18 +57,23 @@ abstract class BaseGateway extends WC_Payment_Gateway {
 	protected $default_description;
 
 	/**
+	 * Instance of the order metabox class.
+	 *
+	 * @var Order_Metabox
+	 */
+	protected $order_metabox;
+
+	/**
 	 * Class constructor.
 	 */
 	public function __construct() {
-		$this->id           = 'zaver_checkout_bank_transfer';
 		$this->has_fields   = false;
-		$this->method_title = __( 'Zaver Checkout Bank Transfer', 'zco' );
 
 		$this->init_form_fields();
 		$this->init_settings();
 
 		$this->title             = $this->get_option( 'title', $this->method_title );
-		$this->order_button_text = apply_filters( 'zco_order_button_text', __( 'Pay with Zaver', 'zco' ) );
+		$this->order_button_text = apply_filters( 'zco_order_button_text', __( 'Pay with Zaver', 'zco' ), $this );
 		$this->supports          = apply_filters(
 			$this->id . '_supports',
 			array(

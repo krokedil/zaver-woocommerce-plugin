@@ -23,6 +23,7 @@
 
 namespace Zaver;
 
+use Krokedil\Zaver\Admin\OrderMetabox;
 use Krokedil\Zaver\PaymentMethods;
 use KrokedilZCODeps\Krokedil\Support\Logger;
 use KrokedilZCODeps\Krokedil\Support\SystemReport;
@@ -118,6 +119,13 @@ class Plugin {
 	 * @var Order_Management
 	 */
 	private $order_management;
+
+	/**
+	 * The gateway classes for Zaver to register based on split gateway settings. Key is the class and value is the ID.
+	 *
+	 * @var array<string,string>
+	 */
+	private $zaver_payment_gateways = array();
 
 	/**
 	 * Get the instance of the plugin.
@@ -218,7 +226,7 @@ class Plugin {
 			return;
 		}
 
-		$settings                                  = get_option( 'woocommerce_zaver_checkout_settings' );
+		$settings                                  = get_option( 'woocommerce_zaver_checkout_settings', array() );
 		$this->enable_payment_method_pay_later     = wc_string_to_bool( $settings['enable_payment_method_pay_later'] ?? 'yes' );
 		$this->enable_payment_method_swish         = wc_string_to_bool( $settings['enable_payment_method_swish'] ?? 'yes' );
 		$this->enable_payment_method_bank_transfer = wc_string_to_bool( $settings['enable_payment_method_bank_transfer'] ?? 'yes' );
@@ -238,6 +246,7 @@ class Plugin {
 			}
 		}
 
+		$this->set_zaver_gateways();
 		$this->include_files();
 
 		add_filter( 'woocommerce_payment_gateways', array( $this, 'register_gateway' ) );
@@ -268,7 +277,7 @@ class Plugin {
 		$this->logger           = new Logger( 'zaver_checkout', wc_string_to_bool( $settings['logging'] ?? false ) );
 		$this->session          = new Session();
 		$this->order_management = Order_Management::get_instance();
-
+		OrderMetabox::register_for_payment_methods( $this->zaver_payment_gateways );
 		Hooks::instance();
 
 		add_action( 'before_woocommerce_init', array( $this, 'declare_wc_compatibility' ) );
@@ -368,34 +377,9 @@ class Plugin {
 	 * @return array
 	 */
 	public function register_gateway( $gateways ) {
-		include_once ZCO_PLUGIN_PATH . '/classes/payment-processor.php';
-		$gateways[] = __NAMESPACE__ . '\Checkout_Gateway';
-
-		if ( $this->separate_payment_methods ) {
-
-			if ( $this->enable_payment_method_pay_later ) {
-				$gateways[] = PaymentMethods\PayLater::class;
-			}
-
-			if ( $this->enable_payment_method_swish ) {
-				$gateways[] = PaymentMethods\Swish::class;
-			}
-
-			if ( $this->enable_payment_method_installments ) {
-				$gateways[] = PaymentMethods\Installments::class;
-			}
-
-			if ( $this->enable_payment_method_instant_debit ) {
-				$gateways[] = PaymentMethods\InstantDebit::class;
-			}
-
-			if ( $this->enable_payment_method_bank_transfer ) {
-				$gateways[] = PaymentMethods\BankTransfer::class;
-			}
-
-			if ( $this->enable_payment_method_vipps ) {
-				$gateways[] = PaymentMethods\Vipps::class;
-			}
+		$gateway_class_names = array_keys( $this->zaver_payment_gateways );
+		foreach ( $gateway_class_names as $gateway_class_name ) {
+			$gateways[] = $gateway_class_name;
 		}
 
 		return $gateways;
@@ -428,6 +412,46 @@ class Plugin {
 		);
 
 		return $links;
+	}
+
+	/**
+	 * Set the Zaver gateways based on settings.
+	 *
+	 * @return void
+	 */
+	private function set_zaver_gateways() {
+		$this->zaver_payment_gateways = array(
+			Checkout_Gateway::class => self::PAYMENT_METHOD,
+		);
+
+		// If separate payment methods are not enabled, return early.
+		if ( ! $this->separate_payment_methods ) {
+			return;
+		}
+
+		if ( $this->enable_payment_method_pay_later ) {
+			$this->zaver_payment_gateways[PaymentMethods\PayLater::class] = PaymentMethods\PayLater::PAYMENT_METHOD_ID;
+		}
+
+		if ( $this->enable_payment_method_swish ) {
+			$this->zaver_payment_gateways[PaymentMethods\Swish::class] = PaymentMethods\Swish::PAYMENT_METHOD_ID;
+		}
+
+		if ( $this->enable_payment_method_installments ) {
+			$this->zaver_payment_gateways[PaymentMethods\Installments::class] = PaymentMethods\Installments::PAYMENT_METHOD_ID;
+		}
+
+		if ( $this->enable_payment_method_instant_debit ) {
+			$this->zaver_payment_gateways[PaymentMethods\InstantDebit::class] = PaymentMethods\InstantDebit::PAYMENT_METHOD_ID;
+		}
+
+		if ( $this->enable_payment_method_bank_transfer ) {
+			$this->zaver_payment_gateways[PaymentMethods\BankTransfer::class] = PaymentMethods\BankTransfer::PAYMENT_METHOD_ID;
+		}
+
+		if ( $this->enable_payment_method_vipps ) {
+			$this->zaver_payment_gateways[PaymentMethods\Vipps::class] = PaymentMethods\Vipps::PAYMENT_METHOD_ID;
+		}
 	}
 }
 
