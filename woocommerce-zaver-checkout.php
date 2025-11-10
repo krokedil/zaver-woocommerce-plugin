@@ -3,7 +3,7 @@
  * Plugin Name: Zaver Checkout for WooCommerce
  * Plugin URI: https://wordpress.org/plugins/zaver-checkout-for-woocommerce/
  * Description: The official Zaver Checkout payment gateway for WooCommerce.
- * Version: 2.0.1
+ * Version: 2.1.0
  * Author: Zaver
  * Author URI: https://zaver.com/woocommerce
  * Developer: Krokedil
@@ -41,7 +41,7 @@ define( 'ZCO_PLUGIN_PATH', __DIR__ );
  * Handles the plugins initialization.
  */
 class Plugin {
-	public const VERSION        = '2.0.1';
+	public const VERSION        = '2.1.0';
 	public const PAYMENT_METHOD = 'zaver_checkout';
 
 	/**
@@ -430,27 +430,27 @@ class Plugin {
 		}
 
 		if ( $this->enable_payment_method_pay_later ) {
-			$this->zaver_payment_gateways[PaymentMethods\PayLater::class] = PaymentMethods\PayLater::PAYMENT_METHOD_ID;
+			$this->zaver_payment_gateways[ PaymentMethods\PayLater::class ] = PaymentMethods\PayLater::PAYMENT_METHOD_ID;
 		}
 
 		if ( $this->enable_payment_method_swish ) {
-			$this->zaver_payment_gateways[PaymentMethods\Swish::class] = PaymentMethods\Swish::PAYMENT_METHOD_ID;
+			$this->zaver_payment_gateways[ PaymentMethods\Swish::class ] = PaymentMethods\Swish::PAYMENT_METHOD_ID;
 		}
 
 		if ( $this->enable_payment_method_installments ) {
-			$this->zaver_payment_gateways[PaymentMethods\Installments::class] = PaymentMethods\Installments::PAYMENT_METHOD_ID;
+			$this->zaver_payment_gateways[ PaymentMethods\Installments::class ] = PaymentMethods\Installments::PAYMENT_METHOD_ID;
 		}
 
 		if ( $this->enable_payment_method_instant_debit ) {
-			$this->zaver_payment_gateways[PaymentMethods\InstantDebit::class] = PaymentMethods\InstantDebit::PAYMENT_METHOD_ID;
+			$this->zaver_payment_gateways[ PaymentMethods\InstantDebit::class ] = PaymentMethods\InstantDebit::PAYMENT_METHOD_ID;
 		}
 
 		if ( $this->enable_payment_method_bank_transfer ) {
-			$this->zaver_payment_gateways[PaymentMethods\BankTransfer::class] = PaymentMethods\BankTransfer::PAYMENT_METHOD_ID;
+			$this->zaver_payment_gateways[ PaymentMethods\BankTransfer::class ] = PaymentMethods\BankTransfer::PAYMENT_METHOD_ID;
 		}
 
 		if ( $this->enable_payment_method_vipps ) {
-			$this->zaver_payment_gateways[PaymentMethods\Vipps::class] = PaymentMethods\Vipps::PAYMENT_METHOD_ID;
+			$this->zaver_payment_gateways[ PaymentMethods\Vipps::class ] = PaymentMethods\Vipps::PAYMENT_METHOD_ID;
 		}
 	}
 }
