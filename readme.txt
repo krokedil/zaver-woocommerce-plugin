@@ -3,9 +3,9 @@ Contributors: krokedil
 Tags: woocommerce, zaver, checkout, payment, refund, swish
 Stable tag: 2.1.0
 Requires at least: 4.7
-Tested up to: 6.8.3
+Tested up to: 6.9
 Requires PHP: 7.4
-WC tested up to: 10.2.2
+WC tested up to: 10.3.5
 License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
