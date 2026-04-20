@@ -145,6 +145,10 @@ abstract class BaseGateway extends WC_Payment_Gateway {
 			return false;
 		}
 
+		if ( is_checkout_pay_page() ) {
+			return true;
+		}
+
 		if ( is_checkout() ) {
 			return \Zaver\ZCO()->session()->is_available( $this->id );
 		}
