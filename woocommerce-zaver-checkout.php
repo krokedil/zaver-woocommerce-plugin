@@ -279,8 +279,6 @@ class Plugin {
 		$this->order_management = Order_Management::get_instance();
 		OrderMetabox::register_for_payment_methods( $this->zaver_payment_gateways );
 		Hooks::instance();
-
-		add_action( 'before_woocommerce_init', array( $this, 'declare_wc_compatibility' ) );
 	}
 
 	/**
@@ -297,7 +295,7 @@ class Plugin {
 	 *
 	 * @return void
 	 */
-	public function declare_wc_compatibility() {
+	public static function declare_wc_compatibility() {
 		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
 			// Declare HPOS compatibility.
 			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
@@ -467,4 +465,5 @@ function ZCO() {
 	return Plugin::instance();
 }
 
+add_action( 'before_woocommerce_init', array( __NAMESPACE__ . '\\Plugin', 'declare_wc_compatibility' ) );
 add_action( 'plugins_loaded', __NAMESPACE__ . '\\ZCO' );
