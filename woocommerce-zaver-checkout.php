@@ -467,4 +467,4 @@ function ZCO() {
 	return Plugin::instance();
 }
 
-ZCO();
+add_action( 'plugins_loaded', __NAMESPACE__ . '\\ZCO' );
