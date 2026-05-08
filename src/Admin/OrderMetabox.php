@@ -34,6 +34,94 @@ class OrderMetabox extends \KrokedilZCODeps\Krokedil\WooCommerce\OrderMetabox {
 
 		add_action( 'init', array( $this, 'set_metabox_title' ) );
 		add_action( 'init', array( $this, 'handle_sync_order_action' ), 9999 );
+
+		// Only register the AJAX handler once across all metabox instances.
+		static $ajax_registered = false;
+		if ( ! $ajax_registered ) {
+			add_action( 'wp_ajax_zaver_set_order_management', array( __CLASS__, 'handle_set_order_management' ) );
+			$ajax_registered = true;
+		}
+
+		$this->scripts[] = 'zaver-metabox';
+	}
+
+	/**
+	 * Register the metabox assets.
+	 *
+	 * @return void
+	 */
+	public function register_assets() {
+		parent::register_assets();
+
+		\wp_register_script(
+			'zaver-metabox',
+			plugin_dir_url( ZCO_MAIN_FILE ) . 'assets/js/metabox.js',
+			array( 'jquery' ),
+			Plugin::VERSION,
+			true
+		);
+	}
+
+	/**
+	 * Maybe localize the script with data.
+	 *
+	 * @param string $handle The script handle.
+	 * @return void
+	 */
+	protected function maybe_localize_script( $handle ) {
+		if ( 'zaver-metabox' !== $handle ) {
+			return;
+		}
+
+		wp_localize_script(
+			'zaver-metabox',
+			'zaverMetaboxParams',
+			array(
+				'orderId' => $this->get_id(),
+				'metaboxId' => $this->id,
+				'ajax'    => array(
+					'setOrderManagement' => array(
+						'url'    => admin_url( 'admin-ajax.php' ),
+						'action' => 'zaver_set_order_management',
+						'nonce'  => wp_create_nonce( 'zaver_set_order_management' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Handle the AJAX request to enable/disable order management for an order.
+	 *
+	 * @return void
+	 */
+	public static function handle_set_order_management() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( 'permission_denied' );
+		}
+
+		$nonce    = filter_input( INPUT_POST, 'nonce', FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+		$order_id = filter_input( INPUT_POST, 'order_id', FILTER_SANITIZE_NUMBER_INT );
+		$enabled  = filter_input( INPUT_POST, 'enabled', FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+
+		if ( ! wp_verify_nonce( $nonce, 'zaver_set_order_management' ) ) {
+			wp_send_json_error( 'bad_nonce' );
+		}
+
+		if ( empty( $order_id ) ) {
+			wp_send_json_error( 'no_order_id' );
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			wp_send_json_error( 'no_order' );
+		}
+
+		$enabled = ( 'yes' === $enabled ) ? 'yes' : 'no';
+		$order->update_meta_data( Order_Management::ORDER_MANAGEMENT_ENABLED, $enabled );
+		$order->save();
+
+		wp_send_json_success();
 	}
 
 	/**
@@ -128,10 +216,17 @@ class OrderMetabox extends \KrokedilZCODeps\Krokedil\WooCommerce\OrderMetabox {
 				self::output_info( __( 'Refunded amount', 'zco' ), wc_price( $payment_status->getRefundedAmount(), $price_format_args ) );
 			}
 
+			$order_management_disabled = ! Order_Management::is_order_management_enabled( $order );
+			if ( $order_management_disabled ) {
+				self::output_info( __( 'Order management', 'zco' ), __( 'Disabled', 'zco' ) );
+			}
+
 			// Only show the sync order button if the order can be updated using the gateway.
 			if ( $this->can_update_order ) {
-				self::output_sync_order_button( $order, $payment_status );
+				self::output_sync_order_button( $order, $payment_status, $order_management_disabled );
 			}
+
+			self::output_collapsable_section( 'zaver-advanced', __( 'Advanced', 'zco' ), self::get_advanced_section_content( $order ) );
 
 			do_action( 'zco_after_order_metabox_output', $order, $payment_status, $this->payment_method_id );
 		} catch ( \Exception $e ) {
@@ -172,14 +267,33 @@ class OrderMetabox extends \KrokedilZCODeps\Krokedil\WooCommerce\OrderMetabox {
 	}
 
 	/**
+	 * Get the advanced section content (the order management toggle).
+	 *
+	 * @param \WC_Order $order The WooCommerce order.
+	 * @return string
+	 */
+	private static function get_advanced_section_content( $order ) {
+		$enabled = Order_Management::is_order_management_enabled( $order );
+		$value   = $enabled ? 'yes' : 'no';
+
+		$title = __( 'Order management', 'zco' );
+		$tip   = __( 'Disable this to turn off the automatic synchronization with Zaver. When disabled, capture and cancel of the Zaver payment have to be done manually from the merchant portal.', 'zco' );
+
+		ob_start();
+		self::output_toggle_switch( $title, $enabled, $tip, 'zaver-toggle-order-management', array( 'zaver-order-management' => $value ) );
+		return ob_get_clean();
+	}
+
+	/**
 	 * Output the sync order action button.
 	 *
 	 * @param \WC_Order             $order The WooCommerce order.
 	 * @param PaymentStatusResponse $payment_status The payment status from the Zaver order.
+	 * @param bool                  $order_management_disabled Whether order management is disabled for this order.
 	 *
 	 * @return void
 	 */
-	private static function output_sync_order_button( $order, $payment_status ) {
+	private static function output_sync_order_button( $order, $payment_status, $order_management_disabled = false ) {
 		// If the order is captured, canceled or refunded, do not show the sync button.
 		if( $order->get_meta( Order_Management::CAPTURED ) || $order->get_meta( Order_Management::CANCELED ) || $order->get_meta( Order_Management::REFUNDED ) ) {
 			return;
@@ -203,6 +317,10 @@ class OrderMetabox extends \KrokedilZCODeps\Krokedil\WooCommerce\OrderMetabox {
 		// And set the notice and button type based the difference in totals.
 		$disabled = $order_total > $payment_amount;
 		$classes  = ( $order_total === $payment_amount ) ? 'button-secondary' : 'button-primary';
+
+		if ( $order_management_disabled ) {
+			$classes .= ' disabled';
+		}
 
 		echo '<br/>';
 		// If the sync is not disabled, print the action button.

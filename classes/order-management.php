@@ -39,6 +39,8 @@ class Order_Management {
 	public const PARTIALLY_REFUNDED = '_zaver_partially_refunded';
 	/** The order is on-hold. */
 	public const ON_HOLD = '_zaver_on_hold';
+	/** Whether order management is enabled for the individual order ('yes'/'no'). */
+	public const ORDER_MANAGEMENT_ENABLED = '_zaver_order_management_enabled';
 
 	/**
 	 * The reference the *Singleton* instance of this class.
@@ -98,6 +100,11 @@ class Order_Management {
 	public function capture_order( $order_id, $order ) {
 		try{
 			if ( ! Plugin::gateway()->is_chosen_gateway( $order ) ) {
+				return;
+			}
+
+			if ( ! self::is_order_management_enabled( $order ) ) {
+				$order->add_order_note( __( 'Order management is disabled for this order. The Zaver order was not captured.', 'zco' ) );
 				return;
 			}
 
@@ -180,6 +187,11 @@ class Order_Management {
 	public function cancel_order( $order_id, $order ) {
 		try{
 			if ( ! Plugin::gateway()->is_chosen_gateway( $order ) ) {
+				return;
+			}
+
+			if ( ! self::is_order_management_enabled( $order ) ) {
+				$order->add_order_note( __( 'Order management is disabled for this order. The Zaver order was not canceled.', 'zco' ) );
 				return;
 			}
 
@@ -302,6 +314,11 @@ class Order_Management {
 				return;
 			}
 
+			if ( ! self::is_order_management_enabled( $order ) ) {
+				$order->add_order_note( __( 'Order management is disabled for this order. The Zaver order was not updated.', 'zco' ) );
+				return;
+			}
+
 			if ( $order->get_meta( self::CAPTURED ) ) {
 				$order->add_order_note( __( 'The Zaver order was captured and can no longer be updated.', 'zco' ) );
 				return;
@@ -344,6 +361,18 @@ class Order_Management {
 	 */
 	public static function format_price( $amount, $currency = '' ) {
 		return wc_price( $amount, array( 'currency' => $currency ) );
+	}
+
+	/**
+	 * Whether order management is enabled for the individual order.
+	 *
+	 * Defaults to enabled when the meta is unset (existing/legacy orders).
+	 *
+	 * @param \WC_Order $order The WooCommerce order object.
+	 * @return bool
+	 */
+	public static function is_order_management_enabled( $order ) {
+		return 'no' !== $order->get_meta( self::ORDER_MANAGEMENT_ENABLED );
 	}
 }
 
