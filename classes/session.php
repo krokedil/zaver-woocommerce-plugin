@@ -25,6 +25,7 @@ class Session {
 	 */
 	public function __construct() {
 		add_action( 'woocommerce_after_calculate_totals', array( $this, 'get_session' ), 999999 );
+		add_action( 'before_woocommerce_pay', array( $this, 'get_session' ), 999999 );
 
 		add_action(
 			'woocommerce_thankyou',
@@ -38,11 +39,50 @@ class Session {
 	 * Create or update Zaver payment session.
 	 */
 	public function get_session() {
-		if ( ! is_checkout() || is_checkout_pay_page() || is_order_received_page() ) {
+		if ( is_order_received_page() ) {
 			return;
 		}
 
-		$this->update_available_payment_methods_from_cart();
+		$context = $this->get_context();
+		if ( null === $context ) {
+			return;
+		}
+
+		$this->update_available_payment_methods( $context );
+	}
+
+	/**
+	 * Resolves the total/currency/market context to use when looking up available payment methods.
+	 *
+	 * On the pay-for-order page the cart is empty, so we read from the order instead.
+	 *
+	 * @return array{total:string,currency:string,market:string}|null
+	 */
+	private function get_context() {
+		if ( is_checkout_pay_page() ) {
+			$order_id = absint( get_query_var( 'order-pay' ) );
+			$order    = $order_id ? wc_get_order( $order_id ) : false;
+			if ( ! $order ) {
+				return null;
+			}
+
+			$market = $order->get_billing_country();
+			return array(
+				'total'    => $order->get_total(),
+				'currency' => $order->get_currency(),
+				'market'   => empty( $market ) ? wc_get_base_location()['country'] : $market,
+			);
+		}
+
+		if ( ! is_checkout() || ! isset( WC()->cart ) ) {
+			return null;
+		}
+
+		return array(
+			'total'    => WC()->cart->get_total( 'edit' ),
+			'currency' => get_woocommerce_currency(),
+			'market'   => $this->get_market(),
+		);
 	}
 
 	/**
@@ -56,14 +96,15 @@ class Session {
 	}
 
 	/**
-	 * Updates the available Zaver payment methods based on the cart content, and saves it to the 'zaver_checkout_available_payment_methods' session data.
+	 * Updates the available Zaver payment methods for the given context, and saves it to the 'zaver_checkout_available_payment_methods' session data.
 	 *
+	 * @param array{total:string,currency:string,market:string} $context Resolved context.
 	 * @return void
 	 */
-	private function update_available_payment_methods_from_cart() {
-		$total    = WC()->cart->get_total( 'edit' );
-		$market   = $this->get_market();
-		$currency = get_woocommerce_currency();
+	private function update_available_payment_methods( array $context ) {
+		$total    = $context['total'];
+		$market   = $context['market'];
+		$currency = $context['currency'];
 
 		$available_payment_methods = WC()->session->get( 'zaver_checkout_available_payment_methods' );
 		if ( isset( $available_payment_methods[ $market ][ $currency ][ $total ] ) ) {
@@ -107,32 +148,34 @@ class Session {
 	}
 
 	/**
-	 * Checks whether a Zaver gateway should be available based on the content of the cart.
+	 * Checks whether a Zaver gateway should be available based on the current context (cart or order).
 	 *
 	 * @param string $id The Zaver payment method identifier (e.g., "PAY_LATER").
 	 * @return bool Whether it should be available.
 	 */
 	public function is_available( $id ) {
-		if ( ! isset( WC()->cart ) ) {
+		$context = $this->get_context();
+		if ( null === $context ) {
 			return false;
 		}
 
-		$total    = WC()->cart->get_total( 'edit' );
-		$market   = $this->get_market();
-		$currency = get_woocommerce_currency();
+		$total    = $context['total'];
+		$market   = $context['market'];
+		$currency = $context['currency'];
 
-		$id              = str_replace( 'zaver_checkout_', '', strtolower( $id ) );
 		$payment_methods = WC()->session->get( 'zaver_checkout_available_payment_methods' );
-		if ( ! empty( $payment_methods ) ) {
-			$zaver_payment_methods = $payment_methods[ $market ][ $currency ][ $total ] ?? array();
+		if ( ! isset( $payment_methods[ $market ][ $currency ][ $total ] ) ) {
+			$this->update_available_payment_methods( $context );
+			$payment_methods = WC()->session->get( 'zaver_checkout_available_payment_methods' );
+		}
 
-			if ( ! empty( $zaver_payment_methods ) ) {
-				foreach ( $zaver_payment_methods as $payment_method ) {
-					$payment_method_id = strtolower( $payment_method['paymentMethod'] ?? '' );
-					if ( ! empty( $payment_method_id ) && $payment_method_id === $id ) {
-						return true;
-					}
-				}
+		$id                    = str_replace( 'zaver_checkout_', '', strtolower( $id ) );
+		$zaver_payment_methods = $payment_methods[ $market ][ $currency ][ $total ] ?? array();
+
+		foreach ( $zaver_payment_methods as $payment_method ) {
+			$payment_method_id = strtolower( $payment_method['paymentMethod'] ?? '' );
+			if ( ! empty( $payment_method_id ) && $payment_method_id === $id ) {
+				return true;
 			}
 		}
 
