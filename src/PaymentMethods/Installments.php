@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The Zaver Checkout payment gateway.
  */
 class Installments extends BaseGateway {
-	public const PAYMENT_METHOD_ID = 'zaver_checkout_installments';
+	public const PAYMENT_METHOD_ID = 'zaver_pay_in_parts';
 
 	/**
 	 * Class constructor.
