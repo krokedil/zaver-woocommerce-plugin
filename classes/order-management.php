@@ -153,6 +153,8 @@ class Order_Management {
 
 			self::set_as_captured( $order );
 
+			$order->add_order_note( $note );
+
 			ZCO()->logger()->info(
 				"Captured Zaver payment: {$order->get_transaction_id()}",
 				array(
