@@ -125,6 +125,21 @@ abstract class BaseGateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * The Zaver SDK payment method identifier for this gateway (e.g. "installments").
+	 *
+	 * Historically this was derived from the WooCommerce gateway id by stripping the
+	 * "zaver_checkout_" prefix, so the WC id encoded the Zaver type. Gateways whose WC
+	 * id no longer follows that convention (e.g. Installments, whose id is
+	 * "zaver_pay_in_parts" to satisfy Kustom Checkout) must override this method so the
+	 * Zaver payment method type stays decoupled from the externally-facing gateway id.
+	 *
+	 * @return string Lowercased Zaver payment method identifier.
+	 */
+	public function get_zaver_payment_method() {
+		return str_replace( 'zaver_checkout_', '', strtolower( $this->id ) );
+	}
+
+	/**
 	 * Check if payment method should be available.
 	 *
 	 * @return boolean
@@ -146,7 +161,7 @@ abstract class BaseGateway extends WC_Payment_Gateway {
 		}
 
 		if ( is_checkout() ) {
-			return \Zaver\ZCO()->session()->is_available( $this->id );
+			return \Zaver\ZCO()->session()->is_available( $this->get_zaver_payment_method() );
 		}
 
 		return true;

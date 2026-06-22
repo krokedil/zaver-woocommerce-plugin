@@ -49,7 +49,13 @@ class Payment_Processor {
 		$token = $response->getToken();
 
 		if ( ZCO()->separate_payment_methods_enabled() ) {
-			$selected_payment_method   = str_replace( 'zaver_checkout_', '', $order->get_payment_method() );
+			// Resolve the Zaver payment method type via the gateway, keeping it decoupled from the WC gateway id (e.g. "zaver_pay_in_parts" maps to "installments").
+			// Fall back to the legacy prefix-strip if the gateway cannot be resolved.
+			$payment_method_id         = $order->get_payment_method();
+			$gateway                   = WC()->payment_gateways()->payment_gateways()[ $payment_method_id ] ?? null;
+			$selected_payment_method   = ( $gateway instanceof \Krokedil\Zaver\PaymentMethods\BaseGateway )
+				? $gateway->get_zaver_payment_method()
+				: str_replace( 'zaver_checkout_', '', $payment_method_id );
 			$available_payment_methods = $response->getSpecificPaymentMethodData();
 			foreach ( $available_payment_methods as $payment_method ) {
 				$title = strtolower( $payment_method['paymentMethod'] );

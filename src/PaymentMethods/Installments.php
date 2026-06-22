@@ -29,4 +29,17 @@ class Installments extends BaseGateway {
 
 		parent::__construct();
 	}
+
+	/**
+	 * The Zaver SDK payment method identifier.
+	 *
+	 * The WooCommerce gateway id was renamed to "zaver_pay_in_parts" for Kustom Checkout,
+	 * so it no longer encodes the Zaver type. Zaver still identifies this method as
+	 * "INSTALLMENTS", so we return that explicitly rather than deriving it from the id.
+	 *
+	 * @return string
+	 */
+	public function get_zaver_payment_method() {
+		return 'installments';
+	}
 }
