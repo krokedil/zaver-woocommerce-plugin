@@ -147,7 +147,7 @@ class Order_Management {
 
 			$note = sprintf(
 				// translators: the amount including currency.
-				__( 'The Zaver order has been captured. Captured amount: %1$.2f.', 'zco' ),
+				__( 'The Zaver order has been captured. Captured amount: %1$s.', 'zco' ),
 				self::format_price( $response->getCapturedAmount(), $response->getCurrency() )
 			);
 
