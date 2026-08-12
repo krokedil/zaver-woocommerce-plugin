@@ -384,8 +384,8 @@ msgstr ""
 #. the amount including currency.
 #: classes/order-management.php:149
 #, php-format
-msgid "The Zaver order has been captured. Captured amount: %1$.2f."
-msgstr "Zaver ordern har aktiverats. Aktiverat belopp: %1$.2f."
+msgid "The Zaver order has been captured. Captured amount: %1$s."
+msgstr "Zaver ordern har aktiverats. Aktiverat belopp: %1$s."
 
 #: classes/order-management.php:207
 msgid "The Zaver order has been refunded and can no longer be canceled."

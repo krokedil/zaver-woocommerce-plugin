@@ -147,11 +147,13 @@ class Order_Management {
 
 			$note = sprintf(
 				// translators: the amount including currency.
-				__( 'The Zaver order has been captured. Captured amount: %1$.2f.', 'zco' ),
+				__( 'The Zaver order has been captured. Captured amount: %1$s.', 'zco' ),
 				self::format_price( $response->getCapturedAmount(), $response->getCurrency() )
 			);
 
 			self::set_as_captured( $order );
+
+			$order->add_order_note( $note );
 
 			ZCO()->logger()->info(
 				"Captured Zaver payment: {$order->get_transaction_id()}",

@@ -349,7 +349,7 @@ msgstr ""
 #. the amount including currency.
 #: classes/order-management.php:149
 #, php-format
-msgid "The Zaver order has been captured. Captured amount: %1$.2f."
+msgid "The Zaver order has been captured. Captured amount: %1$s."
 msgstr ""
 
 #: classes/order-management.php:207
